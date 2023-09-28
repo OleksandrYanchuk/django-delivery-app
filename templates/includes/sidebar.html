@@ -1,0 +1,8 @@
+<h1>
+    Shops:
+  </h1>
+<ul class="sidebar-nav list-group">
+  {% for shop in shop_list %}
+  <li class="list-group-item"><a href="{% url 'services:shop_goods_detail' pk=shop.id %}">{{ shop.name }}</a></li>
+  {% endfor %}
+</ul>
