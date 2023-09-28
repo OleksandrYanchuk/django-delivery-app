@@ -1,0 +1,21 @@
+{% extends "base.html" %}
+{% load crispy_forms_filters %}
+
+{% block content %}
+<div class="row">
+    <div class="col-sm-2">
+        {% block sidebar %}
+            {% include "includes/sidebar.html" %}
+        {% endblock %}
+    </div>
+    <div class="col-sm-10">
+        <!-- Вміст сторінки shop_detail -->
+    </div>
+</div>
+{% endblock %}
+Це включить меню сайдбару з base.html в сторінку shop_detail.html.
+
+
+
+
+

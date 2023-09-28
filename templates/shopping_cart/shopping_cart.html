@@ -1,0 +1,115 @@
+{% extends "base.html" %}
+{% load custom_filters %}
+
+{% block content %}
+  <h1>Shopping Cart</h1>
+  <table>
+    <thead>
+      <tr>
+        <th>Product</th>
+        <th>Price</th>
+        <th>Quantity</th>
+        <th>Total</th>
+      </tr>
+    </thead>
+    <tbody>
+      {% for item, total in cart_items|zip_lists:totals %}
+        <tr id="item-{{ item.id }}">
+          <td>{{ item.goods.name }}</td>
+          <td>${{ item.goods.price }}</td>
+          <td>
+            <input type="number" value="{{ item.quantity }}" min="1" class="quantity-input" data-item-id="{{ item.id }}">
+          </td>
+          <td id="total-{{ item.id }}">
+            <p>${{ total|floatformat:2 }}</p>
+          </td>
+          <td>
+            <img
+              src="/static/img/remove-icon-png.png"
+              alt="Remove"
+              width="70" height="70"
+              class="remove-cart-item"
+              data-item-id="{{ item.id }}"
+            />
+          </td>
+        </tr>
+      {% endfor %}
+    </tbody>
+  </table>
+  {% with total_to_pay=cart_items|get_total %}
+    <p>Total to Pay: $<span id="total-to-pay">{{ total_to_pay|floatformat:2 }}</span></p>
+  {% endwith %}
+  <!-- Додайте кнопку "Checkout" -->
+  <button id="checkout-button">Checkout</button>
+
+  <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+  <script>
+    $(document).ready(function () {
+      // Функція для оновлення сторінки без перезавантаження кешу
+      function refreshPage() {
+        location.reload();
+      }
+
+      $(".quantity-input").on("input", function () {
+        const itemId = $(this).data("item-id");
+        const newQuantity = $(this).val();
+        $.ajax({
+          type: "POST",
+          url: "{% url 'services:update_cart_item' %}",
+          data: {
+            item_id: itemId,
+            new_quantity: newQuantity,
+            csrfmiddlewaretoken: "{{ csrf_token }}",
+          },
+          success: function (data) {
+            // Оновлюємо відповідну частину сторінки з оновленою інформацією про кошик
+            $("#total-" + itemId).html(data.updated_total_html);
+            // Оновлюємо "Total to Pay" на сторінці
+            $("#total-to-pay").text(data.total_to_pay);
+            // Запускаємо таймер для оновлення сторінки через 1 секунду
+            setTimeout(refreshPage, 1000);
+          },
+        });
+      });
+
+      $(".remove-cart-item").on("click", function () {
+        const itemId = $(this).data("item-id");
+        $.ajax({
+          type: "POST",
+          url: "{% url 'services:remove_cart_item' %}",
+          data: {
+            item_id: itemId,
+            csrfmiddlewaretoken: "{{ csrf_token }}",
+          },
+          success: function (data) {
+            // Видаляємо відповідний рядок зі сторінки
+            $("#item-" + itemId).remove();
+            // Оновлюємо "Total to Pay" на сторінці
+            $("#total-to-pay").text(data.total_to_pay);
+            // Запускаємо таймер для оновлення сторінки через 1 секунду
+            setTimeout(refreshPage, 1000);
+          },
+        });
+      });
+
+      // Обробник події для кнопки "Checkout"
+      $("#checkout-button").on("click", function () {
+        // Відправляємо AJAX-запит для створення замовлення і очищення кошика
+        $.ajax({
+          type: "POST",
+          url: "{% url 'services:order_create' %}",
+          data: {
+            csrfmiddlewaretoken: "{{ csrf_token }}",
+          },
+          success: function (data) {
+            // Після успішного створення замовлення і очищення кошика,
+            // ви можете перенаправити користувача на сторінку замовлення або виконати інші дії
+            alert("Order created successfully!");
+            // Приклад перенаправлення користувача на сторінку замовлення
+            window.location.href = "{% url 'services:order_list' %}";
+          },
+        });
+      });
+    });
+  </script>
+{% endblock %}

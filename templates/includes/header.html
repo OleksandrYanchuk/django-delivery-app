@@ -1,0 +1,44 @@
+<nav class="navbar navbar-expand-lg bg-body-tertiary fixed-top pt-4 header-container" style="background-color: transparent !important;">
+  <div class="container-fluid d-flex align-items-center">
+    <a class="navbar-brand ps-5" href="{% url 'user:index' %}">
+      <img src="/static/img/logo.jpg" alt="Logo" width="100" height="70" class="d-inline-block align-text-center logo">
+      Nail Master Service
+    </a>
+    <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarSupportedContent"
+      aria-controls="navbarSupportedContent" aria-expanded="false" aria-label="Toggle navigation">
+      <span class="navbar-toggler-icon"></span>
+    </button>
+    <div class="collapse navbar-collapse justify-content-center" id="navbarSupportedContent">
+      <ul class="navbar-nav ms-auto justify-content-center">
+        <li class="nav-item pe-5">
+          <a class="nav-link active" aria-current="page" href="{% url 'user:index' %}">Home</a>
+        </li>
+        <li class="nav-item pe-5">
+          <a class="nav-link active" aria-current="page" href="{% url 'services:shop_list' %}">Shops</a>
+        </li>
+        <li class="nav-item pe-5">
+          <a class="nav-link active" aria-current="page" href="{% url 'services:shopping_cart' %}">Shopping Cart</a>
+        </li>
+        <li class="nav-item pe-5">
+          <a class="nav-link active" aria-current="page" href="{% url 'services:order_list' %}">History</a>
+        </li>
+      </ul>
+      <div class="dropdown ms-auto">
+        <button class="btn btn-secondary dropdown-toggle" type="button" data-bs-toggle="dropdown" aria-expanded="false">
+          User: {{ user.get_username }}
+        </button>
+        <ul class="dropdown-menu">
+          {% if user.is_authenticated %}
+            <li><a class="dropdown-item" href="{% url 'user:customer-detail' pk=user.id %}">User details</a></li>
+            <li><a class="dropdown-item" href="{% url 'logout'%}?next={{request.path}}">Logout</a></li>
+
+          {% else %}
+          <li><a class="dropdown-item" href="{% url 'login'%}?next={{request.path}}">Login</a></li>
+          {% endif %}
+          
+          
+        </ul>
+      </div>
+    </div>
+  </div>
+</nav>

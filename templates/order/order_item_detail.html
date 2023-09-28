@@ -1,0 +1,33 @@
+{% extends "base.html" %}
+
+{% block content %}
+  <h1>Order Details</h1>
+  <h2>Order #{{ order.id }}</h2>
+  <p><strong>User:</strong> {{ order.user.username }}</p>
+  <p><strong>Date Created:</strong> {{ order.date_created|date:"Y-m-d H:i:s" }}</p>
+  <p><strong>Total Amount:</strong> ${{ order.total_amount }}</p>
+
+  <h3>Order Items:</h3>
+  <table>
+    <thead>
+      <tr>
+        <th>Product</th>
+        <th>Quantity</th>
+        <th>Unit Price</th>
+        <th>Total Price</th>
+      </tr>
+    </thead>
+    <tbody>
+      {% for item in order.orderitem_set.all %}
+        <tr>
+          <td>{{ item.goods.name }}</td>
+          <td>{{ item.quantity }}</td>
+          <td>${{ item.goods.price }}</td>
+          <td>${{ item.total_price }}</td>
+        </tr>
+      {% endfor %}
+    </tbody>
+  </table>
+
+  <a href="{% url 'services:order_list' %}" class="btn btn-primary">Back to Order List</a>
+{% endblock %}

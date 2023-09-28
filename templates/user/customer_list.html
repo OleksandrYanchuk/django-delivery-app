@@ -1,0 +1,37 @@
+{% extends "base.html" %}
+{% load crispy_forms_filters %}
+
+{% block content %}
+
+<h1>All customers</h1>
+
+
+<form action="" method="get" class="form-inline search-form">
+  {{ search_form|crispy }}
+  <input class="btn btn-secondary" type="submit" value="🔍">
+</form>
+
+    
+
+    {% if customer_list %}
+    <table>
+      <tr>
+        <th>ID</th>
+        <th>Username</th>
+        <th>First name</th>
+        <th>Last name</th>
+      </tr>
+    {% for customer in customer_list %}
+      <tr>
+        <td>{{ customer.id }}</td>
+        <td><a href="{{ customer.get_absolute_url }}">{{ customer.username }} {% if user == customer %} (Me){% endif %}</a></td>
+        <td>{{ customer.first_name }}</td>
+        <td>{{ customer.last_name }}</td>
+      </tr>
+    {% endfor %}
+
+    </table>
+    {% else %}
+      <p>There are no customers in the service.</p>
+    {% endif %}
+{% endblock %}

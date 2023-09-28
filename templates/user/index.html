@@ -1,0 +1,22 @@
+{% extends "base.html" %}
+
+{% block content %}
+    <h1>Nail Master Service Home</h1>
+    <p>Welcome to Nail Master service!</p>
+    <h2>Dynamic content</h2>
+    <p>The nail service has the following record counts:</p>
+    <ul>
+        <li><strong>Masters:</strong> {{ num_masters }}</li>
+        <li><strong>Customers:</strong> {{ num_customers }}</li>
+    </ul>
+
+    <div class="col-md-12">
+        <div id="calendar"></div>
+    </div>
+
+
+    <p>You have visited this page
+        {{ num_visits }} time{{ num_visits|pluralize }}.
+    </p>
+
+{% endblock %}
