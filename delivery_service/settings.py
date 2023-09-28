@@ -29,6 +29,8 @@ dotenv_path = os.path.join(BASE_DIR, "../.env")
 # SECURITY WARNING: keep the secret key used in production secret!
 SECRET_KEY = os.getenv("SECRET_KEY")
 
+GOOGLE_MAPS_API_KEY = os.getenv("GOOGLE_MAPS_API_KEY")
+
 # SECURITY WARNING: don't run with debug turned on in production!
 DEBUG = True
 
@@ -49,6 +51,7 @@ INSTALLED_APPS = [
     "crispy_bootstrap4",
     "user",
     "services",
+    "django_google_maps",
 ]
 
 MIDDLEWARE = [

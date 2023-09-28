@@ -56,13 +56,26 @@
                 success: function(response) {
                     // Ваш код для обробки успішного додавання товару до кошика
                     // Наприклад, відобразити повідомлення або оновити інформацію про кошик
+                    goodId(location.replace(location.href));
                 },
                 error: function(xhr, textStatus, errorThrown) {
                     // Ваш код для обробки помилки під час виконання запиту
+                    goodId(location.replace(location.href));
                 }
             });
         });
     });
 </script>
+
+{% if messages %}
+  <div class="alert alert-danger">
+    <ul>
+      {% for message in messages %}
+        <li>{{ message }}</li>
+      {% endfor %}
+    </ul>
+  </div>
+{% endif %}
+
 
 {% endblock %}

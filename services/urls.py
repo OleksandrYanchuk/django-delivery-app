@@ -18,6 +18,7 @@ from .views import (
     OrderListView,
     OrderDetailView,
     OrderItemDetailView,
+    update_user_info,
 )
 
 urlpatterns = [
@@ -46,6 +47,7 @@ urlpatterns = [
     path(
         "order-item/<int:pk>/", OrderItemDetailView.as_view(), name="order_item_detail"
     ),
+    path("update-user-info/", update_user_info, name="update_user_info"),
 ]
 
 app_name = "services"
