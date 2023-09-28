@@ -5,6 +5,8 @@ from user.models import Customer
 
 class Shop(models.Model):
     name = models.CharField(max_length=255, unique=True)
+    lat = models.FloatField(null=True, blank=True)
+    lng = models.FloatField()
 
     def __str__(self):
         return self.name
