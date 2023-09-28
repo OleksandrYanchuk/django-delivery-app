@@ -2,47 +2,167 @@
 {% load custom_filters %}
 
 {% block content %}
-  <h1>Shopping Cart</h1>
-  <table>
-    <thead>
-      <tr>
-        <th>Product</th>
-        <th>Price</th>
-        <th>Quantity</th>
-        <th>Total</th>
-      </tr>
-    </thead>
-    <tbody>
-      {% for item, total in cart_items|zip_lists:totals %}
-        <tr id="item-{{ item.id }}">
-          <td>{{ item.goods.name }}</td>
-          <td>${{ item.goods.price }}</td>
-          <td>
-            <input type="number" value="{{ item.quantity }}" min="1" class="quantity-input" data-item-id="{{ item.id }}">
-          </td>
-          <td id="total-{{ item.id }}">
-            <p>${{ total|floatformat:2 }}</p>
-          </td>
-          <td>
-            <img
-              src="/static/img/remove-icon-png.png"
-              alt="Remove"
-              width="70" height="70"
-              class="remove-cart-item"
-              data-item-id="{{ item.id }}"
-            />
-          </td>
-        </tr>
-      {% endfor %}
-    </tbody>
-  </table>
-  {% with total_to_pay=cart_items|get_total %}
-    <p>Total to Pay: $<span id="total-to-pay">{{ total_to_pay|floatformat:2 }}</span></p>
-  {% endwith %}
-  <!-- Додайте кнопку "Checkout" -->
-  <button id="checkout-button">Checkout</button>
 
-  <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+
+<form id="user-info-form">
+  {% csrf_token %}
+  <div class="form-group">
+  <label for="name">Name</label>
+  <input type="text" id="name" value="{{ name }}" readonly>
+</div>
+
+<div class="form-group">
+  <label for="email">Email</label>
+  <input type="text" id="email" value="{{ email }}" readonly>
+</div>
+
+  <div class="form-group">
+    <label for="phone_number">Phone Number</label>
+    <input type="text" id="phone_number" name="phone_number" value="{{ phone_number }}">
+  </div>
+
+  <div class="form-group">
+    <label for="address">Address</label>
+    <input type="text" id="address" name="address" value="{{ address }}">
+  </div>
+
+  <button type="button" id="update-user-info">Update Info</button>
+</form>
+
+<h1>Shopping Cart</h1>
+<table>
+  <thead>
+    <tr>
+      <th>Product</th>
+      <th>Price</th>
+      <th>Quantity</th>
+      <th>Total</th>
+    </tr>
+  </thead>
+  <tbody>
+    {% for item, total in cart_items|zip_lists:totals %}
+    <tr id="item-{{ item.id }}">
+      <td>{{ item.goods.name }}</td>
+      <td>${{ item.goods.price }}</td>
+      <td>
+        <input type="number" value="{{ item.quantity }}" min="1" class="quantity-input" data-item-id="{{ item.id }}">
+      </td>
+      <td id="total-{{ item.id }}">
+        <p>${{ total|floatformat:2 }}</p>
+      </td>
+      <td>
+        <img
+          src="/static/img/remove-icon-png.png"
+          alt="Remove"
+          width="70" height="70"
+          class="remove-cart-item"
+          data-item-id="{{ item.id }}"
+        />
+      </td>
+    </tr>
+    {% endfor %}
+  </tbody>
+</table>
+
+{% with total_to_pay=cart_items|get_total %}
+<p>Total to Pay: $<span id="total-to-pay">{{ total_to_pay|floatformat:2 }}</span></p>
+{% endwith %}
+<!-- Додайте кнопку "Checkout" -->
+<button id="checkout-button">Checkout</button>
+
+<div id="address-info">
+  <p>Адреса: <span id="address-text">Виберіть місце на карті</span></p>
+</div>
+
+<!-- Додайте кнопку "Вибрати місце на карті" -->
+<button id="open-map-button">Вибрати місце на карті</button>
+
+<!-- Додайте блок для відображення карти -->
+<div id="map" style="display: none; height: 400px;"></div>
+
+<script>
+  function reverseGeocode(latlng, callback) {
+  const geocoder = new google.maps.Geocoder();
+  geocoder.geocode({ location: latlng }, function (results, status) {
+    if (status === "OK" && results[0]) {
+      callback(results[0].formatted_address);
+    } else {
+      callback("Адреса не знайдена");
+    }
+  });
+}
+  let currentMarker; // Змінна для збереження поточного маркера на карті
+
+  // Функція для відкриття та обробки карти
+  function openMap() {
+    // Створіть карту та встановіть початкові параметри
+    const map = new google.maps.Map(document.getElementById('map'), {
+      center: { lat: 0, lng: 0 }, // Початкові координати
+      zoom: 8, // Зум карти
+    });
+
+    /// Додайте обробник події для вибору місця на карті
+map.addListener('click', function(event) {
+  // Отримайте координати, де користувач клікнув на карті
+  const latLng = event.latLng;
+
+  // Очистіть попередній маркер (якщо він існує)
+  if (currentMarker) {
+    currentMarker.setMap(null);
+  }
+
+  // Створіть новий маркер на вибраних координатах
+  currentMarker = new google.maps.Marker({
+    position: latLng,
+    map: map,
+    title: 'Ваш вибір',
+    draggable: true, // Дозволити переміщення маркера
+  });
+
+  // Отримайте адресу на основі координат маркера та встановіть її у полі "address"
+    reverseGeocode(latLng, function(address) {
+      // Встановіть отриману адресу у полі "address"
+      document.getElementById('address').value = address;
+      document.getElementById('address-text').textContent = address;
+    });
+
+    // Додайте обробник події для переміщення маркера та оновлення координат
+    currentMarker.addListener('dragend', function(event) {
+      const newLatLng = event.latLng;
+      console.log('Нові координати: ' + newLatLng.lat() + ', ' + newLatLng.lng());
+      // Отримайте адресу на основі нових координат і встановіть її у полі "address"
+      reverseGeocode(newLatLng, function(newAddress) {
+        document.getElementById('address').value = newAddress;
+        document.getElementById('address-text').textContent = newAddress;
+      });
+    });
+  });
+
+    // Відобразіть карту
+    document.getElementById('map').style.display = 'block';
+  }
+
+  // Функція для закриття карти
+  function closeMap() {
+    // Сховайте карту
+    document.getElementById('map').style.display = 'none';
+
+    // Очистіть попередній маркер (якщо він існує)
+    if (currentMarker) {
+      currentMarker.setMap(null);
+    }
+  }
+
+  // Обробник події для кнопки "Вибрати місце на карті"
+  document.getElementById('open-map-button').addEventListener('click', function() {
+    openMap();
+  });
+</script>
+
+<script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+
+
+
   <script>
     $(document).ready(function () {
       // Функція для оновлення сторінки без перезавантаження кешу
@@ -111,5 +231,39 @@
         });
       });
     });
+
   </script>
+<script>
+  $(document).ready(function () {
+    // Функція для оновлення інформації користувача
+    function updateUserInfo() {
+      const newPhoneNumber = $("#phone_number").val();
+      const newAddress = $("#address").val();
+
+      $.ajax({
+        type: "POST",
+        url: "{% url 'services:update_user_info' %}",
+        data: {
+          phone_number: newPhoneNumber,
+          address: newAddress,
+          csrfmiddlewaretoken: "{{ csrf_token }}",
+        },
+        success: function (data) {
+          if (data.success) {
+            alert("User information updated successfully!");
+          } else {
+            alert("Failed to update user information.");
+          }
+        },
+      });
+    }
+
+    // Обробник події для кнопки "Update Info"
+    $("#update-user-info").on("click", updateUserInfo);
+  });
+</script>
+
+
 {% endblock %}
+
+

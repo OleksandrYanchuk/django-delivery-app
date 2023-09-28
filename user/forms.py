@@ -9,4 +9,5 @@ class CustomerCreationForm(UserCreationForm):
             "name",
             "email",
             "phone_number",
+            "address",
         )

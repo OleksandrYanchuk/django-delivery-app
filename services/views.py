@@ -1,6 +1,12 @@
+from django.contrib import messages
 from django.contrib.auth.decorators import login_required
 from django.db import transaction
-from django.http import HttpResponseRedirect, JsonResponse, HttpResponseBadRequest
+from django.http import (
+    HttpResponseRedirect,
+    JsonResponse,
+    HttpResponseBadRequest,
+    HttpResponse,
+)
 from django.shortcuts import render, redirect, get_object_or_404
 from django.template.loader import render_to_string
 from django.urls import reverse_lazy, reverse
@@ -98,24 +104,35 @@ def add_to_cart(request):
         if goods_id:
             goods = get_object_or_404(Goods, id=goods_id)
 
-            # Перевіряємо, чи у користувача вже є кошик для покупок
+            # Перевірка, чи у користувача вже є кошик для покупок
             shopping_cart, created = ShoppingCart.objects.get_or_create(
                 user=request.user
             )
 
-            # Створюємо новий елемент кошика з товаром і додаванням до кошика
-            cart_item, created = CartItem.objects.get_or_create(
-                shopping_cart=shopping_cart, goods=goods
-            )
+            # Перевірка, чи всі товари в кошику належать до одного магазину
+            if (
+                shopping_cart.goods.filter(shop_name=goods.shop_name).exists()
+                or not shopping_cart.goods.all()
+            ):
+                # Створення нового елемента кошика з товаром і додавання до кошика
+                cart_item, created = CartItem.objects.get_or_create(
+                    shopping_cart=shopping_cart, goods=goods
+                )
 
-            # Якщо товар вже було у кошику, збільшуємо кількість на одиницю
-            if not created:
-                cart_item.quantity += 1
-                cart_item.save()
+                # Якщо товар вже був у кошику, збільшуємо кількість на одиницю
+                if not created:
+                    cart_item.quantity += 1
+                    cart_item.save()
 
-        return HttpResponseRedirect(
-            reverse("services:shop_goods_detail", args=[goods.shop_name.id])
-        )
+                return HttpResponseRedirect(
+                    reverse("services:shop_goods_detail", args=[goods.shop_name.id])
+                )
+            else:
+                # Додайте повідомлення про помилку до контексту
+                messages.error(
+                    request, "Cannot add items from different shops to the cart"
+                )
+                return HttpResponseRedirect(reverse("services:shop_goods_detail"))
 
     # Якщо дані некоректні або HTTP метод GET
     return HttpResponseRedirect(reverse("services:shop_goods_detail"))
@@ -129,7 +146,14 @@ def shopping_cart(request):
     cart_items = CartItem.objects.filter(shopping_cart=shopping_cart)
     totals = get_totals(cart_items)
 
-    context = {"cart_items": cart_items, "totals": totals}
+    context = {
+        "cart_items": cart_items,
+        "totals": totals,
+        "name": shopping_cart.user.name,
+        "email": shopping_cart.user.email,
+        "phone_number": shopping_cart.user.phone_number,
+        "address": shopping_cart.user.address,
+    }
 
     return render(request, "shopping_cart/shopping_cart.html", context)
 
@@ -258,3 +282,24 @@ class OrderItemDetailView(DetailView):
     model = OrderItem
     template_name = "order/order_item_detail.html"
     context_object_name = "order_item"
+
+
+def update_user_info(request):
+    if (
+        request.method == "POST"
+        and request.headers.get("x-requested-with") == "XMLHttpRequest"
+    ):
+        new_phone_number = request.POST.get("phone_number")
+        new_address = request.POST.get("address")
+
+        # Отримайте користувача з об'єкта запиту
+        user = request.user
+
+        # Оновіть дані користувача
+        user.phone_number = new_phone_number
+        user.address = new_address
+        user.save()
+
+        return JsonResponse({"success": True})
+
+    return JsonResponse({"message": "Not an AJAX request"}, status=400)
