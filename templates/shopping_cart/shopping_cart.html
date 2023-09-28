@@ -4,17 +4,19 @@
 {% block content %}
 
 
+
+
 <form id="user-info-form">
   {% csrf_token %}
   <div class="form-group">
-  <label for="name">Name</label>
-  <input type="text" id="name" value="{{ name }}" readonly>
-</div>
+    <label for="name">Name</label>
+    <input type="text" id="name" value="{{ name }}" readonly>
+  </div>
 
-<div class="form-group">
-  <label for="email">Email</label>
-  <input type="text" id="email" value="{{ email }}" readonly>
-</div>
+  <div class="form-group">
+    <label for="email">Email</label>
+    <input type="text" id="email" value="{{ email }}" readonly>
+  </div>
 
   <div class="form-group">
     <label for="phone_number">Phone Number</label>
@@ -28,6 +30,7 @@
 
   <button type="button" id="update-user-info">Update Info</button>
 </form>
+<button id="my-location-button">Встановити моє місце розташування</button>
 
 <h1>Shopping Cart</h1>
 <table>
@@ -75,68 +78,136 @@
 </div>
 
 <!-- Додайте кнопку "Вибрати місце на карті" -->
-<button id="open-map-button">Вибрати місце на карті</button>
+<button id="open-map-button">Показати адреси магазинів</button>
 
 <!-- Додайте блок для відображення карти -->
 <div id="map" style="display: none; height: 400px;"></div>
 
+{% endblock %}
+
+{% block scripts %}
+<script src="https://maps.googleapis.com/maps/api/js?key=AIzaSyDuQVzkZf_ol0JaqLrh-PTzZDKnJgEYAUo&callback=initMap" async defer></script>
+
+<script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+
+
 <script>
-  function reverseGeocode(latlng, callback) {
-  const geocoder = new google.maps.Geocoder();
-  geocoder.geocode({ location: latlng }, function (results, status) {
-    if (status === "OK" && results[0]) {
-      callback(results[0].formatted_address);
-    } else {
-      callback("Адреса не знайдена");
-    }
+  function initMap() {
+  const myLatLng = { lat: 51.5074, lng: -0.1278 };
+  console.log('initMap function is called.'); // Виводимо повідомлення про виклик функції initMap
+
+  // Створіть карту та встановіть початкові параметри
+  const map = new google.maps.Map(document.getElementById("map"), {
+    zoom: 4,
+    center: myLatLng,
   });
+  new google.maps.Marker({
+    position: myLatLng,
+    map,
+    title: "Hello World!",
+  });
+
+  // Додайте постійні маркери на карту
+
+  openMap(map)
+  addPermanentMarkers(map);
+
+  // Решта вашого коду
 }
+
+function addPermanentMarkers(map) {
+  console.log('Adding permanent markers to the map.'); // Log a message indicating that permanent markers are being added
+
+  // Create marker objects for each permanent marker and add them to the map
+  const marker1 = new google.maps.Marker({
+    position: { lat: 51.5074, lng: -0.1278 }, // Coordinates for marker 1 (London)
+    map: map, // Assign the map where you want to add the marker
+    title: 'Marker 1', // Title for the marker (optional)
+  });
+
+  const marker2 = new google.maps.Marker({
+    position: { lat: 52.5200, lng: 13.4050 }, // Coordinates for marker 2 (Berlin)
+    map: map, // Assign the map where you want to add the marker
+    title: 'Marker 2', // Title for the marker (optional)
+  });
+
+  // You can add more markers in a similar fashion if needed
+}
+
+  function reverseGeocode(latlng, callback) {
+    const geocoder = new google.maps.Geocoder();
+    geocoder.geocode({ location: latlng }, function (results, status) {
+      if (status === "OK" && results[0]) {
+        callback(results[0].formatted_address);
+      } else {
+        callback("Адреса не знайдена");
+      }
+    });
+  }
+
   let currentMarker; // Змінна для збереження поточного маркера на карті
+  let currentShopMarker;
+  var shopLat = {{ lat }};
+  var shopLng = {{ lng }};
+
 
   // Функція для відкриття та обробки карти
   function openMap() {
     // Створіть карту та встановіть початкові параметри
     const map = new google.maps.Map(document.getElementById('map'), {
-      center: { lat: 0, lng: 0 }, // Початкові координати
+      center: { lat: 49.23535, lng: 28.45136 }, // Початкові координати
       zoom: 8, // Зум карти
     });
+    currentShopMarker = new google.maps.Marker({
+        position: { lat: shopLat, lng: shopLng },
+        map: map,
+        title: 'Shop',
+        draggable: false,
+        visible: true,
+      });
+
+
+
+
+
+
 
     /// Додайте обробник події для вибору місця на карті
-map.addListener('click', function(event) {
-  // Отримайте координати, де користувач клікнув на карті
-  const latLng = event.latLng;
+    map.addListener('click', function (event) {
+      // Отримайте координати, де користувач клікнув на карті
+      const latLng = event.latLng;
+// Очистіть попередній маркер (якщо він існує)
+      if (currentMarker) {
+        currentMarker.setMap(null);
+      }
 
-  // Очистіть попередній маркер (якщо він існує)
-  if (currentMarker) {
-    currentMarker.setMap(null);
-  }
 
-  // Створіть новий маркер на вибраних координатах
-  currentMarker = new google.maps.Marker({
-    position: latLng,
-    map: map,
-    title: 'Ваш вибір',
-    draggable: true, // Дозволити переміщення маркера
-  });
+      // Створіть новий маркер на вибраних координатах
+      currentMarker = new google.maps.Marker({
+        position: latLng,
+        map: map,
+        title: 'Ваш вибір',
+        draggable: true, // Дозволити переміщення маркера
+      });
 
-  // Отримайте адресу на основі координат маркера та встановіть її у полі "address"
-    reverseGeocode(latLng, function(address) {
-      // Встановіть отриману адресу у полі "address"
-      document.getElementById('address').value = address;
-      document.getElementById('address-text').textContent = address;
-    });
+      // Отримайте адресу на основі координат маркера та встановіть її у полі "address"
+      reverseGeocode(latLng, function (address) {
+        // Встановіть отриману адресу у полі "address"
+        document.getElementById('address').value = address;
+        document.getElementById('address-text').textContent = address;
+      });
 
-    // Додайте обробник події для переміщення маркера та оновлення координат
-    currentMarker.addListener('dragend', function(event) {
-      const newLatLng = event.latLng;
-      console.log('Нові координати: ' + newLatLng.lat() + ', ' + newLatLng.lng());
-      // Отримайте адресу на основі нових координат і встановіть її у полі "address"
-      reverseGeocode(newLatLng, function(newAddress) {
-        document.getElementById('address').value = newAddress;
-        document.getElementById('address-text').textContent = newAddress;
+      // Додайте обробник події для переміщення маркера та оновлення координат
+      currentMarker.addListener('dragend', function (event) {
+        const newLatLng = event.latLng;
+        console.log('Нові координати: ' + newLatLng.lat() + ', ' + newLatLng.lng());
+        // Отримайте адресу на основі нових координат і встановіть її у полі "address"
+        reverseGeocode(newLatLng, function (newAddress) {
+          document.getElementById('address').value = newAddress;
+          document.getElementById('address-text').textContent = newAddress;
+        });
       });
     });
-  });
 
     // Відобразіть карту
     document.getElementById('map').style.display = 'block';
@@ -154,85 +225,119 @@ map.addListener('click', function(event) {
   }
 
   // Обробник події для кнопки "Вибрати місце на карті"
-  document.getElementById('open-map-button').addEventListener('click', function() {
+  document.getElementById('open-map-button').addEventListener('click', function () {
     openMap();
+  });
+
+  // Отримайте посилання на кнопку за її id
+  const myLocationButton = document.getElementById('my-location-button');
+
+  // Додайте обробник події для кнопки
+  myLocationButton.addEventListener('click', function () {
+    // Отримайте місце розташування користувача (геолокацію)
+    if (navigator.geolocation) {
+      navigator.geolocation.getCurrentPosition(function (position) {
+        const userLatLng = {
+          lat: position.coords.latitude,
+          lng: position.coords.longitude,
+        };
+
+        // Очистіть попередній маркер (якщо він існує)
+        if (currentMarker) {
+          currentMarker.setMap(null);
+        }
+
+        // Створіть новий маркер на місці розташування користувача
+        currentMarker = new google.maps.Marker({
+          position: userLatLng,
+          map: map,
+          title: 'Ваше місце',
+          draggable: true,
+        });
+
+        // Отримайте адресу на основі координат маркера та встановіть її у полі "address"
+        reverseGeocode(userLatLng, function (address) {
+          // Встановіть отриману адресу у полі "address"
+          document.getElementById('address').value = address;
+          document.getElementById('address-text').textContent = address;
+        });
+      });
+    } else {
+      alert('Ваш браузер не підтримує геолокацію.');
+    }
   });
 </script>
 
-<script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+<script>
+  $(document).ready(function () {
+    // Функція для оновлення сторінки без перезавантаження кешу
+    function refreshPage() {
+      location.reload();
+    }
 
-
-
-  <script>
-    $(document).ready(function () {
-      // Функція для оновлення сторінки без перезавантаження кешу
-      function refreshPage() {
-        location.reload();
-      }
-
-      $(".quantity-input").on("input", function () {
-        const itemId = $(this).data("item-id");
-        const newQuantity = $(this).val();
-        $.ajax({
-          type: "POST",
-          url: "{% url 'services:update_cart_item' %}",
-          data: {
-            item_id: itemId,
-            new_quantity: newQuantity,
-            csrfmiddlewaretoken: "{{ csrf_token }}",
-          },
-          success: function (data) {
-            // Оновлюємо відповідну частину сторінки з оновленою інформацією про кошик
-            $("#total-" + itemId).html(data.updated_total_html);
-            // Оновлюємо "Total to Pay" на сторінці
-            $("#total-to-pay").text(data.total_to_pay);
-            // Запускаємо таймер для оновлення сторінки через 1 секунду
-            setTimeout(refreshPage, 1000);
-          },
-        });
-      });
-
-      $(".remove-cart-item").on("click", function () {
-        const itemId = $(this).data("item-id");
-        $.ajax({
-          type: "POST",
-          url: "{% url 'services:remove_cart_item' %}",
-          data: {
-            item_id: itemId,
-            csrfmiddlewaretoken: "{{ csrf_token }}",
-          },
-          success: function (data) {
-            // Видаляємо відповідний рядок зі сторінки
-            $("#item-" + itemId).remove();
-            // Оновлюємо "Total to Pay" на сторінці
-            $("#total-to-pay").text(data.total_to_pay);
-            // Запускаємо таймер для оновлення сторінки через 1 секунду
-            setTimeout(refreshPage, 1000);
-          },
-        });
-      });
-
-      // Обробник події для кнопки "Checkout"
-      $("#checkout-button").on("click", function () {
-        // Відправляємо AJAX-запит для створення замовлення і очищення кошика
-        $.ajax({
-          type: "POST",
-          url: "{% url 'services:order_create' %}",
-          data: {
-            csrfmiddlewaretoken: "{{ csrf_token }}",
-          },
-          success: function (data) {
-            // Після успішного створення замовлення і очищення кошика,
-            // ви можете перенаправити користувача на сторінку замовлення або виконати інші дії
-            alert("Order created successfully!");
-            // Приклад перенаправлення користувача на сторінку замовлення
-            window.location.href = "{% url 'services:order_list' %}";
-          },
-        });
+    $(".quantity-input").on("input", function () {
+      const itemId = $(this).data("item-id");
+      const newQuantity = $(this).val();
+      $.ajax({
+        type: "POST",
+        url: "{% url 'services:update_cart_item' %}",
+        data: {
+          item_id: itemId,
+          new_quantity: newQuantity,
+          csrfmiddlewaretoken: "{{ csrf_token }}",
+        },
+        success: function (data) {
+          // Оновлюємо відповідну частину сторінки з оновленою інформацією про кошик
+          $("#total-" + itemId).html(data.updated_total_html);
+          // Оновлюємо "Total to Pay" на сторінці
+          $("#total-to-pay").text(data.total_to_pay);
+          // Запускаємо таймер для оновлення сторінки через 1 секунду
+          setTimeout(refreshPage, 1000);
+        },
       });
     });
 
-  </script>
+    $(".remove-cart-item").on("click", function () {
+      const itemId = $(this).data("item-id");
+      $.ajax({
+        type: "POST",
+        url: "{% url 'services:remove_cart_item' %}",
+        data: {
+          item_id: itemId,
+          csrfmiddlewaretoken: "{{ csrf_token }}",
+        },
+        success: function (data) {
+          // Видаляємо відповідний рядок зі сторінки
+          $("#item-" + itemId).remove();
+          // Оновлюємо "Total to Pay" на сторінці
+          $("#total-to-pay").text(data.total_to_pay);
+          // Запускаємо таймер для оновлення сторінки через 1 секунду
+          setTimeout(refreshPage, 1000);
+        },
+      });
+    });
+
+    // Обробник події для кнопки "Checkout"
+    $("#checkout-button").on("click", function () {
+      // Відправляємо AJAX-запит для створення замовлення і очищення кошика
+      $.ajax({
+        type: "POST",
+        url: "{% url 'services:order_create' %}",
+        data: {
+          csrfmiddlewaretoken: "{{ csrf_token }}",
+        },
+        success: function (data) {
+          // Після успішного створення замовлення і очищення кошика,
+          // ви можете перенаправити користувача на сторінку замовлення або виконати інші дії
+          alert("Order created successfully!");
+          // Приклад перенаправлення користувача на сторінку замовлення
+          window.location.href = "{% url 'services:order_list' %}";
+        },
+      });
+    });
+  });
+</script>
+
 <script>
   $(document).ready(function () {
     // Функція для оновлення інформації користувача
@@ -262,8 +367,4 @@ map.addListener('click', function(event) {
     $("#update-user-info").on("click", updateUserInfo);
   });
 </script>
-
-
 {% endblock %}
-
-

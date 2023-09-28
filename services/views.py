@@ -1,3 +1,5 @@
+import json
+
 from django.contrib import messages
 from django.contrib.auth.decorators import login_required
 from django.db import transaction
@@ -145,6 +147,11 @@ def shopping_cart(request):
     # Отримайте всі товари у кошику
     cart_items = CartItem.objects.filter(shopping_cart=shopping_cart)
     totals = get_totals(cart_items)
+    lat = 0
+    lng = 0
+    for cart_item in cart_items:
+        lat = cart_item.goods.shop_name.lat
+        lng = cart_item.goods.shop_name.lng
 
     context = {
         "cart_items": cart_items,
@@ -153,7 +160,14 @@ def shopping_cart(request):
         "email": shopping_cart.user.email,
         "phone_number": shopping_cart.user.phone_number,
         "address": shopping_cart.user.address,
+        "lat": lat,
+        "lng": lng,
     }
+    # Додайте вивід для перевірки координат
+    for cart_item in cart_items:
+        print(
+            f"Координати магазину для товару {cart_item.goods.shop_name.name}: lat {cart_item.goods.shop_name.lat}, lng {cart_item.goods.shop_name.lng}"
+        )
 
     return render(request, "shopping_cart/shopping_cart.html", context)
 
