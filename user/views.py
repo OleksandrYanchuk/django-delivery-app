@@ -1,4 +1,5 @@
 from django.contrib.auth.decorators import login_required
+from django.db import transaction
 from django.http import (
     HttpResponseForbidden,
     HttpResponseRedirect,
@@ -10,6 +11,8 @@ from django.urls import reverse_lazy
 from django.views import generic
 from django.contrib.auth.mixins import LoginRequiredMixin, UserPassesTestMixin
 from django.shortcuts import render
+from geopy import Nominatim
+
 from .forms import CustomerCreationForm
 from .models import Customer
 
