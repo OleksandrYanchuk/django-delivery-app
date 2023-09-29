@@ -160,6 +160,8 @@ def shopping_cart(request):
         "email": shopping_cart.user.email,
         "phone_number": shopping_cart.user.phone_number,
         "address": shopping_cart.user.address,
+        "user_lat": shopping_cart.user.user_lat,
+        "user_lng": shopping_cart.user.user_lng,
         "lat": lat,
         "lng": lng,
     }

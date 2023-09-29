@@ -17,18 +17,22 @@ class GoodsForm(forms.ModelForm):
 class ShoppingCartForm(forms.ModelForm):
     class Meta:
         model = ShoppingCart
-        fields = ["name", "email", "phone_number", "address"]
+        fields = ["name", "email", "phone_number", "address", "user_lat", "user_lng"]
 
     name = forms.CharField(max_length=255, required=False)
     email = forms.EmailField(max_length=255, required=False)
     phone_number = forms.CharField(max_length=14, required=True)
     address = forms.CharField(max_length=255, required=True)
+    user_lat = forms.FloatField(required=False)
+    user_lng = forms.FloatField(required=False)
 
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
         # Заблокуйте поля name і email, щоб вони були лише для перегляду
         self.fields["name"].widget.attrs["readonly"] = True
         self.fields["email"].widget.attrs["readonly"] = True
+        self.fields["user_lat"].widget.attrs["readonly"] = True
+        self.fields["user_lng"].widget.attrs["readonly"] = True
 
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
