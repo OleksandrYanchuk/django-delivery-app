@@ -83,39 +83,26 @@
   <input type="text" id="from">
 </div>
 <button id="calculate-route-button">Прокласти маршрут</button>
-<div id="output"></div>
+
+<p><span id="output"></span></p>
 
 
 <!-- Додайте блок для відображення карти -->
-<div id="map" style="display: none; width: 80%;
-  height: 400px;
-  margin: 10px auto;">
-
-</div>
-
-
-
-
-
-
+<div id="map" style="width: 80%; height: 400px; margin: 10px auto;"></div>
 
 
 
 <script>
-  var directionsDisplay,
-    directionsService,
-    map;
-
-
-  function initMap() {
-  const myLatLng = { lat: 51.5074, lng: -0.1278 };
-
-  openMap()
-}
-
-
-
-
+function initMap() {
+  const map = new google.maps.Map(document.getElementById("map"), {
+    zoom: 8,
+    center: { lat: 49.23535, lng: 28.45136 },
+  });
+  const directionsService = new google.maps.DirectionsService();
+  const directionsRenderer = new google.maps.DirectionsRenderer({
+    draggable: false,
+    map,
+  });
 
   function reverseGeocode(latlng, callback) {
     const geocoder = new google.maps.Geocoder();
@@ -127,6 +114,7 @@
       }
     });
   }
+
   let customerMarker;
 
   let currentMarker; // Змінна для збереження поточного маркера на карті
@@ -139,85 +127,36 @@
           lat: shopLat,
           lng: shopLng,
         };
+  const customerLatLng = {
+          lat: customerLat,
+          lng: customerLng,
+        };
+  const myLocationButton = document.getElementById('my-location-button');
 
-  // Функція для відкриття та обробки карти
-  function openMap() {
-    const map = new google.maps.Map(document.getElementById('map'), {
-      center: { lat: 49.23535, lng: 28.45136 }, // Початкові координати
-      zoom: 8, // Зум карти
-    });
-
-    currentShopMarker = new google.maps.Marker({
-        position: { lat: shopLat, lng: shopLng },
-        map: map,
-        title: 'Shop',
-        draggable: false,
-        visible: true,
-      });
-      reverseGeocode(shopLatLng, function (address) {
+  reverseGeocode(shopLatLng, function (address) {
         document.getElementById('from').value = address;
       });
 
-    customerMarker = new google.maps.Marker({
+  customerMarker = new google.maps.Marker({
         position: { lat: customerLat, lng: customerLng },
         map: map,
         title: 'Customer',
         draggable: true,
         visible: true,
       });
-
-    map.addListener('click', function (event) {
-      const latLng = event.latLng;
-      if (currentMarker) {
-        currentMarker.setMap(null);
-      }
-
-      currentMarker = new google.maps.Marker({
-        position: latLng,
-        map: map,
-        title: 'Ваш вибір',
-        draggable: true, // Дозволити переміщення маркера
-      });
-
-      // Отримайте адресу на основі координат маркера та встановіть її у полі "address"
-      reverseGeocode(latLng, function (address) {
-        // Встановіть отриману адресу у полі "address"
+  reverseGeocode(customerLatLng, function (address) {
         document.getElementById('address').value = address;
         document.getElementById('address-text').textContent = address;
       });
 
-      // Додайте обробник події для переміщення маркера та оновлення координат
-      currentMarker.addListener('dragend', function (event) {
-        const newLatLng = event.latLng;
-        console.log('Нові координати: ' + newLatLng.lat() + ', ' + newLatLng.lng());
-        // Отримайте адресу на основі нових координат і встановіть її у полі "address"
-        reverseGeocode(newLatLng, function (newAddress) {
-          document.getElementById('address').value = newAddress;
-          document.getElementById('address-text').textContent = newAddress;
-        });
-      });
-    });
+  customerMarker.addListener('dragend', function(event) {
+  const newLatLng = event.latLng;
+  reverseGeocode(newLatLng, function(address) {
+    document.getElementById('address').value = address;
+    document.getElementById('address-text').textContent = address;
+  });
+});
 
-    // Відобразіть карту
-    document.getElementById('map').style.display = 'block';
-  }
-
-  // Функція для закриття карти
-  function closeMap() {
-    // Сховайте карту
-    document.getElementById('map').style.display = 'none';
-
-    // Очистіть попередній маркер (якщо він існує)
-    if (currentMarker) {
-      currentMarker.setMap(null);
-    }
-  }
-
-
-  // Отримайте посилання на кнопку за її id
-  const myLocationButton = document.getElementById('my-location-button');
-
-// Додайте обробник події для кнопки
   myLocationButton.addEventListener('click', function () {
     // Отримайте місце розташування користувача (геолокацію)
     console.log("Button clicked");
@@ -229,13 +168,13 @@
         };
 
         // Очистіть попередній маркер (якщо він існує)
-        if (currentMarker) {
-          currentMarker.setMap(null);
+        if (customerMarker) {
+          customerMarker.setMap(null);
         }
 
 
         // Створіть новий маркер на місці розташування користувача
-        currentMarker = new google.maps.Marker({
+        customerMarker = new google.maps.Marker({
           position: { lat: position.coords.latitude, lng: position.coords.longitude },
           map: map,
           title: 'Ваше місце',
@@ -255,57 +194,82 @@
     }
   });
 
+  map.addListener('click', function(event) {
+    // Отримайте координати місця кліку
+    const clickedLatLng = event.latLng;
 
+    // Перемістіть маркер customerMarker в нове місце кліку
+    customerMarker.setPosition(clickedLatLng);
 
-/// Отримайте посилання на кнопку "Показати адреси магазинів"
-document.getElementById('calculate-route-button').addEventListener('click', function () {
+    // Отримайте адресу на основі нових координат та відображайте її
+    reverseGeocode(clickedLatLng, function(address) {
+      document.getElementById('address').value = address;
+      document.getElementById('address-text').textContent = address;
+    });
+  });
 
-  // Викликаємо функцію для отримання адреси магазину при кліку на кнопку
-  calcRoute(map);
-});
+  directionsRenderer.addListener("directions_changed", () => {
+    const directions = directionsRenderer.getDirections();
 
-//define calcRoute function
-function calcRoute(map) {
-  //create a DirectionsService object to use the route method and get a result for our request
-  var directionsService = new google.maps.DirectionsService(map);
-
-  //create a DirectionsRenderer object which we will use to display the route
-  directionsDisplay = new google.maps.DirectionsRenderer(map);
-
-  //bind the DirectionsRenderer to the map
-  directionsDisplay.setMap(map);
-
-  //create request
-  var request = {
-    origin: document.getElementById("from").value, // Адреса магазину
-    destination: document.getElementById("address").value, // Адреса клієнта
-    travelMode: google.maps.TravelMode.DRIVING, // Режим подорожі (DRIVING, WALKING, BYCYCLING, TRANSIT)
-    unitSystem: google.maps.UnitSystem.IMPERIAL
-  }
-
-  //pass the request to the route method
-  directionsService.route(request, function (result, status) {
-  console.log(status)
-  console.log(result)
-
-    if (status == google.maps.DirectionsStatus.OK) {
-      // Відобразіть маршрут на карті та виведіть інформацію про маршрут
-      directionsDisplay.setDirections(result);
-      const output = document.querySelector('#output');
-      output.innerHTML = "<div class='alert-info'>From: " + document.getElementById("from").value + ".<br />To: " + document.getElementById("address").value + ".<br /> Driving distance <i class='fas fa-road'></i> : " + result.routes[0].legs[0].distance.text + ".<br />Duration <i class='fas fa-hourglass-start'></i> : " + result.routes[0].legs[0].duration.text + ".</div>";
-    } else {
-      // Виведіть повідомлення про помилку, якщо маршрут не може бути прокладений
-      directionsDisplay.setDirections({ routes: [] });
-      //center map in London (центруйте карту в певних координатах, якщо потрібно)
-      map.setCenter(myLatLng); // myLatLng - це ваші початкові координати
-      const output = document.querySelector('#output');
-      output.innerHTML = "<div class='alert-danger'><i class='fas fa-exclamation-triangle'></i> Could not retrieve driving distance.</div>";
+    if (directions) {
+      computeTotalDistance(directions);
     }
   });
+  displayRoute(
+    { lat: shopLat, lng: shopLng },
+    { lat: customerLat, lng: customerLng },
+    directionsService,
+    directionsRenderer,
+  );
 }
 
 
+document.getElementById('calculate-route-button').addEventListener('click', function () {
+   window.location.href = "{% url 'services:shopping_cart' %}";
+});
+
+
+function displayRoute(origin, destination, service, display) {
+  service
+    .route({
+      origin: origin,
+      destination: destination,
+      travelMode: google.maps.TravelMode.DRIVING,
+      avoidTolls: true,
+      unitSystem: google.maps.UnitSystem.IMPERIAL,
+    })
+    .then((result) => {
+      display.setDirections(result);
+      const output = document.querySelector('#output');
+    })
+    .catch((e) => {
+      alert("Could not display directions due to: " + e);
+    });
+}
+
+function computeTotalDistance(result) {
+  let total = 0;
+  const myroute = result.routes[0];
+
+  if (!myroute) {
+    return;
+  }
+
+  for (let i = 0; i < myroute.legs.length; i++) {
+    total += myroute.legs[i].distance.value;
+  }
+
+  total = total / 1000;
+  output.innerHTML = "<div class='alert-info'>From: " + document.getElementById("from").value + ".<br />To: " + document.getElementById("address").value + ".<br /> Driving distance <i class='fas fa-road'></i> : " + total + " km" + ".<br />Duration <i class='fas fa-hourglass-start'></i> : " + result.routes[0].legs[0].duration.text + ".</div>";
+}
+
+window.initMap = initMap;
+
 </script>
+
+
+
+
 
 <script>
   $(document).ready(function () {
@@ -406,7 +370,5 @@ function calcRoute(map) {
     $("#update-user-info").on("click", updateUserInfo);
   });
 </script>
-<script src="https://maps.googleapis.com/maps/api/js?key=AIzaSyDuQVzkZf_ol0JaqLrh-PTzZDKnJgEYAUo&callback=initMap" async defer></script>
-<script src="https://ajax.googleapis.com/ajax/libs/jquery/1.11.3/jquery.min.js"></script>
-{% endblock %}
 
+{% endblock %}
