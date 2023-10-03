@@ -19,8 +19,8 @@ class ShoppingCartForm(forms.ModelForm):
         model = ShoppingCart
         fields = ["name", "email", "phone_number", "address", "user_lat", "user_lng"]
 
-    name = forms.CharField(max_length=255, required=False)
-    email = forms.EmailField(max_length=255, required=False)
+    name = forms.CharField(max_length=255, required=True)
+    email = forms.EmailField(max_length=255, required=True)
     phone_number = forms.CharField(max_length=14, required=True)
     address = forms.CharField(max_length=255, required=True)
     user_lat = forms.FloatField(required=False)
@@ -33,11 +33,6 @@ class ShoppingCartForm(forms.ModelForm):
         self.fields["email"].widget.attrs["readonly"] = True
         self.fields["user_lat"].widget.attrs["readonly"] = True
         self.fields["user_lng"].widget.attrs["readonly"] = True
-
-    def __init__(self, *args, **kwargs):
-        super().__init__(*args, **kwargs)
-        # Заблокуйте зміну користувача, оскільки це буде user, який володіє кошиком
-        self.fields["user"].widget.attrs["readonly"] = True
 
 
 class CartItemForm(forms.ModelForm):
@@ -56,3 +51,13 @@ class OrderItemForm(forms.ModelForm):
     class Meta:
         model = OrderItem
         fields = ["product", "quantity"]
+
+
+# Форма для створення купону
+class CreateCouponForm(forms.Form):
+    pass
+
+
+# Форма для відображення активних купонів
+class ActiveCouponsForm(forms.Form):
+    pass

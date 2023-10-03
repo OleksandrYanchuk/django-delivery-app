@@ -5,7 +5,6 @@ from .views import (
     CreateShopView,
     GoodsListView,
     CreateGoodsView,
-    ShoppingCartView,
     ShoppingCartDetailView,
     CartItemView,
     CartItemDetailView,
@@ -19,6 +18,8 @@ from .views import (
     OrderDetailView,
     OrderItemDetailView,
     update_user_info,
+    active_coupons,
+    apply_coupon,
 )
 
 urlpatterns = [
@@ -48,6 +49,8 @@ urlpatterns = [
         "order-item/<int:pk>/", OrderItemDetailView.as_view(), name="order_item_detail"
     ),
     path("update-user-info/", update_user_info, name="update_user_info"),
+    path("generate-coupon/", active_coupons, name="generate_coupon"),
+    path("apply_coupon/", apply_coupon, name="apply_coupon"),
 ]
 
 app_name = "services"

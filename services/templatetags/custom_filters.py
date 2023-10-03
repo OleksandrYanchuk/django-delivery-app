@@ -12,3 +12,11 @@ def zip_lists(a, b):
 @register.filter
 def get_total(cart_items):
     return sum(item.total_price() for item in cart_items)
+
+
+@register.filter
+def multiply(value, arg):
+    try:
+        return value * arg
+    except (ValueError, TypeError):
+        return ""
