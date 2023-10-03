@@ -1,5 +1,5 @@
-import json
-
+import requests
+from decimal import Decimal
 from django.contrib import messages
 from django.contrib.auth.decorators import login_required
 from django.db import transaction
@@ -13,14 +13,24 @@ from django.shortcuts import render, redirect, get_object_or_404
 from django.template.loader import render_to_string
 from django.urls import reverse_lazy, reverse
 from django.utils import timezone
+from django.views.decorators.http import require_POST
 from django.views.generic import ListView, DetailView, CreateView, UpdateView
-from .models import Shop, Goods, ShoppingCart, CartItem, Order, OrderItem
+from .models import (
+    Shop,
+    Goods,
+    ShoppingCart,
+    CartItem,
+    Order,
+    OrderItem,
+    DiscountCoupon,
+)
 from .forms import (
     ShopForm,
     GoodsForm,
     ShoppingCartForm,
     CartItemForm,
     OrderForm,
+    CreateCouponForm,
 )
 
 
@@ -77,6 +87,11 @@ class CartItemView(CreateView):
     form_class = CartItemForm
     template_name = "cart_item.html"
     success_url = reverse_lazy("cart_item")
+
+    def total_price_with_discount(self):
+        return self.quantity * (
+            self.goods.price - (self.goods.price * self.discount_percentage / 100)
+        )
 
 
 class CartItemDetailView(DetailView):
@@ -165,18 +180,50 @@ def shopping_cart(request):
         "lat": lat,
         "lng": lng,
     }
-    # Додайте вивід для перевірки координат
-    for cart_item in cart_items:
-        print(
-            f"Координати магазину для товару {cart_item.goods.shop_name.name}: lat {cart_item.goods.shop_name.lat}, lng {cart_item.goods.shop_name.lng}"
+
+    return render(
+        request,
+        "shopping_cart/shopping_cart.html",
+        context=context,
+    )
+
+
+@login_required
+def checkout(request):
+    if request.method == "POST":
+        recaptcha_token = request.POST.get("recaptchaToken")
+        secret_key = "6LcLr2woAAAAAJ2RSZmirteuwzriGjU3Dk8qhtsa"
+
+        # Виконайте запит на сервер reCAPTCHA Enterprise для перевірки
+        response = requests.post(
+            "https://recaptchaenterprise.googleapis.com/v1beta1/projects/ВАШ_ПРОЕКТ/assessments?key="
+            + secret_key,
+            json={
+                "token": recaptcha_token,
+            },
         )
 
-    return render(request, "shopping_cart/shopping_cart.html", context)
+        result = response.json()
 
+        if result["score"] >= 0.5:
+            # CAPTCHA пройшла перевірку, тепер ви можете оформити замовлення
+            cart_items = CartItem.objects.filter(user=request.user)
+            totals = get_totals(cart_items)
 
-def checkout(request):
-    cart_items = CartItem.objects.filter(user=request.user)
-    totals = get_totals(cart_items)
+            # Оформлення замовлення
+            # ...
+
+            # Видаліть всі елементи кошика, пов'язані з поточним користувачем
+            cart_items.delete()
+
+            return JsonResponse({"success": True})
+        else:
+            # CAPTCHA не пройдена
+            # Обробіть це відповідним чином і повідомте користувача
+            return JsonResponse({"success": False})
+    else:
+        cart_items = CartItem.objects.filter(user=request.user)
+        totals = get_totals(cart_items)
     return render(
         request,
         "shopping_cart/checkout.html",
@@ -202,7 +249,8 @@ def update_cart_item(request):
 
         # Отримайте оновлену інформацію про товар для повернення на клієнтський бік
         updated_item_html = render_to_string(
-            "shopping_cart/cart_item.html", {"item": cart_item}
+            "shopping_cart/shopping_cart.html",
+            {"item": cart_item},
         )
 
         response_data = {"updated_item_html": updated_item_html}
@@ -253,16 +301,40 @@ class OrderCreateView(CreateView):
         shopping_cart, created = ShoppingCart.objects.get_or_create(
             user=self.request.user
         )
+        # Retrieve the coupon code from the session if it exists
+        coupon_code = self.request.session.get("coupon_code")
 
         # Отримайте всі товари у кошику
         cart_items = CartItem.objects.filter(shopping_cart=shopping_cart)
 
         # Обчисліть суму всіх товарів у кошику і встановіть її як total_amount
-        total_amount = sum(item.quantity * item.goods.price for item in cart_items)
+        total_amount = Decimal("0.00")
+        for cart_item in cart_items:
+            total_amount += Decimal(str(cart_item.quantity)) * cart_item.goods.price
+        print(f"Total Amount: {form.instance.total_amount}")
+
         form.instance.total_amount = total_amount
+
+        if coupon_code:
+            # Perform any additional validation or processing for the coupon
+            # Mark the coupon as used
+            try:
+                coupon = DiscountCoupon.objects.get(code=coupon_code, is_used=False)
+                total_with_discount = form.instance.total_amount - (
+                    form.instance.total_amount * coupon.discount_percentage / 100
+                )
+                coupon.is_used = True
+                coupon.save()
+            except DiscountCoupon.DoesNotExist:
+                pass  # Handle the case where the coupon doesn't exist or is already used
 
         # Збережіть об'єкт Order
         order = form.save()
+        if total_with_discount:
+            order.total_with_discount = (
+                total_with_discount  # You can modify this logic as needed
+            )
+            order.save()
 
         # Створіть об'єкти OrderItem для всіх товарів у кошику
         for cart_item in cart_items:
@@ -319,3 +391,92 @@ def update_user_info(request):
         return JsonResponse({"success": True})
 
     return JsonResponse({"message": "Not an AJAX request"}, status=400)
+
+
+def active_coupons(request):
+    user = request.user  # Отримуємо поточного користувача
+    active_coupons = DiscountCoupon.objects.filter(user=user, is_used=False)
+
+    if request.method == "POST":
+        form = CreateCouponForm(request.POST)
+        if form.is_valid():
+            DiscountCoupon.create_random_coupon(user)
+            return HttpResponseRedirect("/delivery/generate-coupon/")
+    else:
+        form = CreateCouponForm()
+
+    return render(
+        request,
+        "coupon/active_coupons.html",
+        {"active_coupons": active_coupons, "form": form},
+    )
+
+
+from django.http import JsonResponse
+
+
+import logging
+
+
+def apply_coupon(request):
+    # Отримайте код купона з POST-запиту
+    coupon_code = request.POST.get("coupon_code")
+
+    # Отримайте поточного користувача
+    user = request.user
+
+    try:
+        # Знайдіть купон за кодом і перевірте, чи він активний та належить користувачу
+        coupon = DiscountCoupon.objects.get(code=coupon_code, is_used=False, user=user)
+
+        # Отримайте всі товари у кошику користувача
+        cart_items = CartItem.objects.filter(shopping_cart__user=user)
+
+        # Перевірте, чи купон відноситься до потрібного магазину
+        if all(item.goods.shop_name.id == coupon.shop.id for item in cart_items):
+            # Застосуйте знижку до суми замовлення
+            discount_amount = apply_discount_coupon(coupon)
+            print(f"Discount amount applied: {discount_amount}")
+
+            request.session["coupon_code"] = coupon_code
+
+            # Підготуйте дані для відправки у відповіді
+            response_data = {
+                "success": True,
+                "discount_amount": discount_amount,
+            }
+
+            # Виведення інформації у журнал сервера
+            logging.info(f"Response data: {response_data}")
+
+            return JsonResponse(response_data)
+
+        else:
+            print("Coupon does not apply to the shop.")
+            messages.error(request, "Замовлення ще не створено")
+            return JsonResponse(
+                {"success": False, "message": "Coupon does not apply to the shop"}
+            )
+
+    except DiscountCoupon.DoesNotExist:
+        print("Coupon not found or already used.")
+        messages.error(request, "Неправильний код купона або купон вже використаний")
+        return JsonResponse(
+            {"success": False, "message": "Invalid coupon code or coupon already used"}
+        )
+
+
+def apply_discount_coupon(coupon):
+    # Отримайте всі товари у кошику користувача
+    cart_items = CartItem.objects.filter(shopping_cart__user=coupon.user)
+
+    # Обчислення загальної суми всіх товарів у кошику
+    totals = get_totals(cart_items)
+
+    # Обчислення знижки за допомогою відсоткового значення
+    discount_percentage = Decimal(coupon.discount_percentage) / 100
+    discount_amount = sum(totals) - (sum(totals) * discount_percentage)
+
+    # Реалізуйте логіку оновлення замовлення з врахуванням знижки
+    # Поверніть суму знижки, щоб відобразити на сторінці
+    return discount_amount

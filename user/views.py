@@ -60,7 +60,7 @@ class CustomerUpdateView(LoginRequiredMixin, UserPassesTestMixin, generic.Update
         """
         return HttpResponseForbidden(
             render_to_string(
-                "nail_service/403.html",
+                "user/403.html",
                 {"error_message": self.get_permission_denied_message()},
             )
         )
@@ -74,12 +74,12 @@ class CustomerDetailView(LoginRequiredMixin, generic.DetailView):
 class CustomerCreateView(generic.CreateView):
     model = Customer
     form_class = CustomerCreationForm
-    success_url = reverse_lazy("nail_service:customer-list")
+    success_url = reverse_lazy("user:customer-list")
 
 
 class CustomerDeleteView(LoginRequiredMixin, UserPassesTestMixin, generic.DeleteView):
     model = Customer
-    success_url = reverse_lazy("nail_service:customer-list")
+    success_url = reverse_lazy("user:customer-list")
 
     def test_func(self) -> bool:
         """
@@ -95,7 +95,7 @@ class CustomerDeleteView(LoginRequiredMixin, UserPassesTestMixin, generic.Delete
         """
         return HttpResponseForbidden(
             render_to_string(
-                "nail_service/403.html",
+                "user/403.html",
                 {"error_message": self.get_permission_denied_message()},
             )
         )

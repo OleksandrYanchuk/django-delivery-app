@@ -5,8 +5,6 @@
 {% block content %}
 
 
-
-
 <form id="user-info-form">
   {% csrf_token %}
   <div class="form-group">
@@ -44,16 +42,14 @@
     </tr>
   </thead>
   <tbody>
-    {% for item, total in cart_items|zip_lists:totals %}
+    {% for item in cart_items %}
     <tr id="item-{{ item.id }}">
       <td>{{ item.goods.name }}</td>
       <td>${{ item.goods.price }}</td>
       <td>
         <input type="number" value="{{ item.quantity }}" min="1" class="quantity-input" data-item-id="{{ item.id }}">
       </td>
-      <td id="total-{{ item.id }}">
-        <p>${{ total|floatformat:2 }}</p>
-      </td>
+      <td>{{ item.goods.price|multiply:item.quantity }}</td>
       <td>
         <img
           src="/static/img/remove-icon-png.png"
@@ -68,11 +64,27 @@
   </tbody>
 </table>
 
+
+
 {% with total_to_pay=cart_items|get_total %}
 <p>Total to Pay: $<span id="total-to-pay">{{ total_to_pay|floatformat:2 }}</span></p>
 {% endwith %}
-<!-- Додайте кнопку "Checkout" -->
-<button id="checkout-button">Checkout</button>
+
+<p>Total Amount with Discount: <span id="total-amount">{{ discount_amount|floatformat:2 }}</span></p>
+
+<form method="post" id="coupon-form">
+  {% csrf_token %}
+  <input type="text" id="coupon-code" name="coupon_code" placeholder="Enter coupon code">
+  <button id="apply-coupon-button" type="button">Apply Coupon</button>
+</form>
+
+
+
+<button type="button" id="checkout-button">Checkout</button>
+<div id="recaptcha" data-sitekey="6LcLr2woAAAAAO4Lae1NLFiDXsz4kbNOUZBqk7GV"></div>
+
+
+
 
 <div id="address-info">
   <p>Адреса: <span id="address-text">Виберіть місце на карті</span></p>
@@ -90,7 +102,26 @@
 <!-- Додайте блок для відображення карти -->
 <div id="map" style="width: 80%; height: 400px; margin: 10px auto;"></div>
 
+<script>
+document.addEventListener("DOMContentLoaded", function () {
+  const checkoutButton = document.getElementById("checkout-button");
 
+  if (checkoutButton) {
+    checkoutButton.addEventListener("click", onClick);
+  }
+
+  function onClick(e) {
+    e.preventDefault();
+    grecaptcha.enterprise.ready(async () => {
+      const token = await grecaptcha.enterprise.execute('6LcLr2woAAAAAO4Lae1NLFiDXsz4kbNOUZBqk7GV', {action: 'LOGIN'});
+      // IMPORTANT: The 'token' that results from execute is an encrypted response sent by
+      // reCAPTCHA Enterprise to the end user's browser.
+      // This token must be validated by creating an assessment.
+      // See https://cloud.google.com/recaptcha-enterprise/docs/create-assessment
+    });
+  }
+});
+</script>
 
 <script>
 function initMap() {
@@ -272,6 +303,7 @@ window.initMap = initMap;
 
 
 <script>
+
   $(document).ready(function () {
     // Функція для оновлення сторінки без перезавантаження кешу
     function refreshPage() {
@@ -342,6 +374,7 @@ window.initMap = initMap;
 </script>
 
 <script>
+  var csrfToken = $('input[name="csrfmiddlewaretoken"]').val();
   $(document).ready(function () {
     // Функція для оновлення інформації користувача
     function updateUserInfo() {
@@ -370,5 +403,54 @@ window.initMap = initMap;
     $("#update-user-info").on("click", updateUserInfo);
   });
 </script>
+<script>
+$(document).ready(function () {
+  // Перевіряємо, чи є збережений купон у локальному сховищі
+  var savedCoupon = localStorage.getItem('coupon_code');
+  if (savedCoupon) {
+    $('#coupon-code').val(savedCoupon); // Встановлюємо значення поля введеного купону
+  }
+
+  // При кліку на кнопку "Apply Coupon"
+  $('#apply-coupon-button').click(function () {
+    var couponCode = $('#coupon-code').val(); // Отримання введеного коду купона
+    if (couponCode) {
+      // Зберігаємо введений купон у локальному сховищі
+      localStorage.setItem('coupon_code', couponCode);
+
+      // Виклик AJAX-запиту для валідації купона
+      $.ajax({
+        type: 'POST',
+        url: "{% url 'services:apply_coupon' %}",
+        data: {
+          'coupon_code': couponCode,
+          csrfmiddlewaretoken: "{{ csrf_token }}",
+        },
+        dataType: 'json', // Очікуємо відповідь у форматі JSON
+        success: function (data) {
+          // Log the data to the console
+          console.log(data);
+
+          if (data.success) {
+            var discountAmount = parseFloat(data.discount_amount); // Перетворення на число
+            $("#total-amount").text(discountAmount.toFixed(2));
+            alert("Coupon successfully applied!");
+          } else {
+            alert("Failed to apply coupon.");
+          }
+        },
+        error: function () {
+          alert('An error occurred while applying the coupon.');
+        }
+      });
+    }
+  });
+});
+
+
+
+</script>
+
+
 
 {% endblock %}
