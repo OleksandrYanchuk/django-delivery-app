@@ -1,4 +1,5 @@
 import requests
+from django.contrib.auth.mixins import LoginRequiredMixin
 from django.http import JsonResponse
 
 
@@ -355,12 +356,14 @@ class OrderCreateView(CreateView):
 
 
 # Class-based view для відображення списку замовлень (order list view)
-class OrderListView(ListView):
+class OrderListView(LoginRequiredMixin, ListView):
     model = Order
     template_name = "order/order_list.html"
-    context_object_name = (
-        "orders"  # Ім'я змінної, яку ви будете використовувати у шаблоні
-    )
+    context_object_name = "orders"
+
+    def get_queryset(self):
+        # Фільтруємо замовлення за поточним користувачем
+        return Order.objects.filter(user=self.request.user)
 
 
 class OrderDetailView(DetailView):

@@ -1,0 +1,112 @@
+html {
+  scroll-behavior: smooth;
+}
+
+.header-container {
+  position: relative;
+  z-index: 2;
+}
+
+.body-container {
+  position: relative;
+}
+
+.body-content {
+  position: absolute;
+  margin-top: 2%;
+  padding-right: 10%;
+}
+
+.search-form{
+  max-width: 30%;
+}
+
+.background-image {
+  background-image: url('/static/img/base_img.jpg');
+  background-repeat: no-repeat;
+  background-size: cover;
+  background-position: center center;
+  background-attachment: fixed;
+  position: relative;
+  z-index: 1;
+
+}
+
+.header {
+  position: relative;
+  z-index: 3;
+}
+
+.table-with-background {
+  background-image: url('/static/img/base_img.jpg');
+  background-repeat: no-repeat;
+  background-size: cover;
+  background-position: center center;
+  background-attachment: fixed;
+  z-index: 3;
+}
+
+.search-form .form-group {
+  margin-right: 5px;
+}
+
+.search-form .form-control {
+  width: auto;
+}
+
+.search-form .btn-secondary {
+  margin-left: 5px;
+}
+
+@keyframes pulse {
+  0% {
+      transform: scale(1);
+  }
+  50% {
+      transform: scale(1.2);
+  }
+  100% {
+      transform: scale(1);
+  }
+}
+
+.logo {
+  transition: transform 2s;
+}
+
+.logo:hover {
+  animation-name: pulse;
+  animation-duration: 5s;
+  animation-iteration-count: infinite;  
+}
+
+
+/* Зміщуємо блок sidebar ближче до лівого краю */
+.sidebar-nav {
+  margin-left: 0; /* Знищуємо відступи зліва */
+  padding-left: 0; /* Знищуємо відступи зліва */
+}
+
+/* Зроблюємо пункти в блоці sidebar прозорими */
+.sidebar-nav li {
+  background: rgba(255, 255, 255, 0.5); /* Прозорий фон */
+  border: none; /* Видаляємо межі */
+}
+
+/* Змінюємо колір тексту для прозорих пунктів */
+.sidebar-nav li a {
+  color: #000; /* Чорний текст */
+  text-decoration: none; /* Видаляємо підкреслення */
+}
+
+/* Змінюємо колір тексту при наведенні на пункт */
+.sidebar-nav li a:hover {
+  color: #007bff; /* Змінюємо колір тексту при наведенні на синій */
+}
+
+body {
+  background-image: url('/static/img/base_img.jpg');
+  background-size: cover; /* Розтягуємо зображення на весь екран */
+  background-repeat: no-repeat; /* Вимикаємо повторення фону */
+  background-attachment: fixed; /* Фіксуємо фон */
+}

@@ -43,15 +43,15 @@ class CustomerUpdateView(LoginRequiredMixin, UserPassesTestMixin, generic.Update
     permission_required = "user.change_own_master"
     model = Customer
     form_class = CustomerCreationForm
-    success_url = reverse_lazy("delivery_service:customer-list")
-    template_name = "delivery_service/customer_update_form.html"
+    success_url = reverse_lazy("user:customer-detail")
+    template_name = "user/customer_update_form.html"
 
     def test_func(self) -> bool:
         """
         Checks if the user has permission to update the customer details.
         Returns True if the user matches the customer's user, False otherwise.
         """
-        return self.request.user == self.get_object().user
+        return self.request.user.name == self.get_object().name
 
     def handle_no_permission(self) -> HttpResponse:
         """
@@ -74,19 +74,19 @@ class CustomerDetailView(LoginRequiredMixin, generic.DetailView):
 class CustomerCreateView(generic.CreateView):
     model = Customer
     form_class = CustomerCreationForm
-    success_url = reverse_lazy("user:customer-list")
+    success_url = reverse_lazy("user:index.html")
 
 
 class CustomerDeleteView(LoginRequiredMixin, UserPassesTestMixin, generic.DeleteView):
     model = Customer
-    success_url = reverse_lazy("user:customer-list")
+    success_url = reverse_lazy("user:index.html")
 
     def test_func(self) -> bool:
         """
         Checks if the user has permission to delete the customer.
         Returns True if the user matches the customer's user, False otherwise.
         """
-        return self.request.user == self.get_object().user
+        return self.request.user.name == self.get_object().name
 
     def handle_no_permission(self) -> HttpResponse:
         """

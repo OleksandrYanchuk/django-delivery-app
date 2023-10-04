@@ -3,20 +3,22 @@
 {% block content %}
   <h1>
     Username: {{ customer.username }}
-    {% if user == customer.user %}
+
+
     <a href="{% url 'user:customer-update' pk=customer.id %}" class="btn btn-primary link-to-page">
-      Update Customer
+      Update info
     </a>
     <a href="{% url 'user:customer-delete' pk=customer.id %}" class="btn btn-danger link-to-page">
-      Delete
+      Delete user
     </a>
-    {% endif %}
+
 
   </h1>
 
-  <p><strong>First name:</strong> {{ customer.first_name }}</p>
-  <p><strong>Last name:</strong> {{ customer.last_name }}</p>
-  <p><strong>Is staff:</strong> {{ customer.is_staff }}</p>
+  <p><strong>Name:</strong> {{ customer.name }}</p>
+  <p><strong>Email:</strong> {{ customer.email }}</p>
+  <p><strong>phone number:</strong> {{ customer.phone_number }}</p>
+  <p><strong>Address:</strong> {{ customer.address }}</p>
 
 
 {% endblock %}
