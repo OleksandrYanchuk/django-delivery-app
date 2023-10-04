@@ -352,25 +352,32 @@ window.initMap = initMap;
       });
     });
 
-    // Обробник події для кнопки "Checkout"
     $("#checkout-button").on("click", function () {
-      // Відправляємо AJAX-запит для створення замовлення і очищення кошика
-      $.ajax({
-        type: "POST",
-        url: "{% url 'services:order_create' %}",
-        data: {
-          csrfmiddlewaretoken: "{{ csrf_token }}",
-        },
-        success: function (data) {
-          // Після успішного створення замовлення і очищення кошика,
-          // ви можете перенаправити користувача на сторінку замовлення або виконати інші дії
-          alert("Order created successfully!");
-          // Приклад перенаправлення користувача на сторінку замовлення
-          window.location.href = "{% url 'services:order_list' %}";
-        },
-      });
+    // Викликаємо reCAPTCHA для отримання токена
+    grecaptcha.ready(function () {
+        grecaptcha.execute('6LcLr2woAAAAAO4Lae1NLFiDXsz4kbNOUZBqk7GV', { action: 'checkout' }).then(function (token) {
+            // Отримали токен reCAPTCHA, тепер його можна відправити на сервер
+            $.ajax({
+                type: "POST",
+                url: "{% url 'services:order_create' %}",
+                data: {
+                    csrfmiddlewaretoken: "{{ csrf_token }}",
+                    recaptcha_token: token, // Додайте токен reCAPTCHA до запиту
+                },
+                success: function (data) {
+                    // Після успішного створення замовлення і очищення кошика,
+                    // ви можете перенаправити користувача на сторінку замовлення або виконати інші дії
+                    alert("Order created successfully!");
+                    // Приклад перенаправлення користувача на сторінку замовлення
+                    window.location.href = "{% url 'services:order_list' %}";
+                },
+            });
+        }).catch(function (error) {
+            // Якщо перевірка reCAPTCHA не пройшла, відобразіть повідомлення про помилку або відхиліть Checkout
+            alert("Перевірка reCAPTCHA не пройшла. Спробуйте ще раз.");
+        });
     });
-  });
+});
 </script>
 
 <script>

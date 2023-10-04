@@ -217,20 +217,8 @@ def checkout(request):
         result = response.json()
 
         if result["score"] >= 0.5:
-            # CAPTCHA пройшла перевірку, тепер ви можете оформити замовлення
-            cart_items = CartItem.objects.filter(user=request.user)
-            totals = get_totals(cart_items)
-
-            # Оформлення замовлення
-            # ...
-
-            # Видаліть всі елементи кошика, пов'язані з поточним користувачем
-            cart_items.delete()
-
-            return JsonResponse({"success": True})
+            return HttpResponseRedirect(reverse("order_create"))
         else:
-            # CAPTCHA не пройдена
-            # Обробіть це відповідним чином і повідомте користувача
             return JsonResponse({"success": False})
     else:
         cart_items = CartItem.objects.filter(user=request.user)
