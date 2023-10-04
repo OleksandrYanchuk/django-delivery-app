@@ -1,3 +1,5 @@
+from django.utils import timezone
+from datetime import datetime
 import random
 
 from django.db import models
@@ -88,20 +90,53 @@ class DiscountCoupon(models.Model):
     )  # Посилання на користувача
     discount_percentage = models.PositiveIntegerField()  # Відсоток знижки
     is_used = models.BooleanField(default=False)  # Позначка про використання купону
+    expiration_datetime = models.DateTimeField(blank=True, null=True)
+    created_at = models.DateTimeField(auto_now_add=True, blank=True, null=True)
 
     def __str__(self):
         return f"Coupon for {self.shop.name} owned by {self.user.name}"
 
     @classmethod
     def create_random_coupon(cls, user):
-        shop = Shop.objects.order_by("?").first()  # Вибираємо рандомний магазин
-        discount_percentage = random.randint(5, 20)  # Генеруємо рандомний відсоток
-        code = "".join(
-            random.choices("ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789", k=10)
-        )  # Генеруємо рандомний код
+        shop = Shop.objects.order_by("?").first()
+        discount_percentage = random.randint(5, 20)
+        code = "".join(random.choices("ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789", k=10))
 
-        coupon = cls.objects.create(
-            code=code, shop=shop, user=user, discount_percentage=discount_percentage
-        )
+        # Перевірте кількість купонів, створених для користувача, за поточний день
+        today = datetime.now()
+        today_start = today.replace(hour=0, minute=0, second=0, microsecond=0)
+        today_end = today.replace(hour=23, minute=59, second=59, microsecond=999999)
+        coupon_count_today = cls.objects.filter(
+            user=user, created_at__range=(today_start, today_end)
+        ).count()
 
-        return coupon
+        # Встановіть обмеження на кількість створених купонів за день
+        max_coupons_per_day = 3
+
+        # Встановіть час закінчення дії купона на 24 години після поточного часу
+        expiration_datetime = timezone.now() + timezone.timedelta(hours=24)
+
+        if coupon_count_today < max_coupons_per_day:
+            coupon = cls.objects.create(
+                code=code,
+                shop=shop,
+                user=user,
+                discount_percentage=discount_percentage,
+                expiration_datetime=expiration_datetime,
+            )
+            return coupon
+        else:
+            return None  # Повернути None, якщо досягнуто обмеження кількості купонів
+
+    @classmethod
+    def get_today_coupon_count(cls, user):
+        today = timezone.now().date()
+        return cls.objects.filter(user=user, created_at__date=today).count()
+
+    def is_expired(self):
+        return self.expiration_datetime <= timezone.now()
+
+    @classmethod
+    def remove_expired_coupons(cls):
+        expired_coupons = cls.objects.filter(expiration_datetime__lte=timezone.now())
+        expired_coupons.delete()
