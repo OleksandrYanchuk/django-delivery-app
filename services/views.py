@@ -1,6 +1,8 @@
+import os
+
 import requests
 from django.contrib.auth.mixins import LoginRequiredMixin
-from django.http import JsonResponse
+from dotenv import load_dotenv
 
 
 import logging
@@ -37,6 +39,9 @@ from .forms import (
     OrderForm,
     CreateCouponForm,
 )
+
+
+load_dotenv()
 
 
 class ShopListView(ListView):
@@ -197,7 +202,7 @@ def shopping_cart(request):
 def checkout(request):
     if request.method == "POST":
         recaptcha_token = request.POST.get("recaptchaToken")
-        secret_key = "6LcLr2woAAAAAJ2RSZmirteuwzriGjU3Dk8qhtsa"
+        secret_key = os.getenv("CAPTCHA_KEY")
 
         # Виконайте запит на сервер reCAPTCHA Enterprise для перевірки
         response = requests.post(
