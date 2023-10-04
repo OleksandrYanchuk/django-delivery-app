@@ -55,7 +55,8 @@ INSTALLED_APPS = [
     "crispy_forms",
     "crispy_bootstrap4",
     "user",
-    "services",   
+    "services",
+    "django_google_maps",
 ]
 
 MIDDLEWARE = [
