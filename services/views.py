@@ -44,19 +44,19 @@ from .forms import (
 load_dotenv()
 
 
-class ShopListView(ListView):
+class ShopListView(LoginRequiredMixin, ListView):
     model = Shop
     template_name = "shop/shop_list.html"
     context_object_name = "shop_list"
 
 
-class ShopDetailView(DetailView):
+class ShopDetailView(LoginRequiredMixin, DetailView):
     model = Shop
     template_name = "shop/shop_detail.html"
     context_object_name = "shop"
 
 
-class CreateShopView(CreateView):
+class CreateShopView(LoginRequiredMixin, CreateView):
     model = Shop
     form_class = ShopForm
     template_name = "create_shop.html"
@@ -66,33 +66,33 @@ class CreateShopView(CreateView):
 # Аналогічно, додайте класи для Goods, ShoppingCart і CartItem
 
 
-class GoodsListView(ListView):
+class GoodsListView(LoginRequiredMixin, ListView):
     model = Goods
     template_name = "goods_list.html"
     context_object_name = "goods"
 
 
-class CreateGoodsView(CreateView):
+class CreateGoodsView(LoginRequiredMixin, CreateView):
     model = Goods
     form_class = GoodsForm
     template_name = "create_goods.html"
     success_url = reverse_lazy("goods_list")
 
 
-class ShoppingCartView(CreateView):
+class ShoppingCartView(LoginRequiredMixin, CreateView):
     model = ShoppingCart
     form_class = ShoppingCartForm
     template_name = "shopping_cart/shopping_cart.html"
     success_url = reverse_lazy("shopping_cart")
 
 
-class ShoppingCartDetailView(DetailView):
+class ShoppingCartDetailView(LoginRequiredMixin, DetailView):
     model = ShoppingCart
     template_name = "shopping_cart_detail.html"
     context_object_name = "shopping_cart_detail"
 
 
-class CartItemView(CreateView):
+class CartItemView(LoginRequiredMixin, CreateView):
     model = CartItem
     form_class = CartItemForm
     template_name = "cart_item.html"
@@ -104,13 +104,13 @@ class CartItemView(CreateView):
         )
 
 
-class CartItemDetailView(DetailView):
+class CartItemDetailView(LoginRequiredMixin, DetailView):
     model = CartItem
     template_name = "cart_item_detail.html"
     context_object_name = "cart_item_detail"
 
 
-class ShopGoodsDetailView(DetailView):
+class ShopGoodsDetailView(LoginRequiredMixin, DetailView):
     model = Shop
     template_name = "shop/shop_goods_detail.html"
     context_object_name = "shop"
@@ -165,6 +165,7 @@ def add_to_cart(request):
     return HttpResponseRedirect(reverse("services:shop_goods_detail"))
 
 
+@login_required
 def shopping_cart(request):
     # Отримайте кошик поточного користувача
     shopping_cart, created = ShoppingCart.objects.get_or_create(user=request.user)
@@ -290,7 +291,7 @@ def get_totals(cart_items):
     return totals
 
 
-class OrderCreateView(CreateView):
+class OrderCreateView(LoginRequiredMixin, CreateView):
     model = Order
     form_class = OrderForm
     template_name = "order/order_create.html"
@@ -324,6 +325,7 @@ class OrderCreateView(CreateView):
         print(f"Total Amount: {form.instance.total_amount}")
 
         form.instance.total_amount = total_amount
+        total_with_discount = total_amount
 
         if coupon_code:
             # Perform any additional validation or processing for the coupon
@@ -371,19 +373,20 @@ class OrderListView(LoginRequiredMixin, ListView):
         return Order.objects.filter(user=self.request.user)
 
 
-class OrderDetailView(DetailView):
+class OrderDetailView(LoginRequiredMixin, DetailView):
     model = Order
     template_name = "order/order_detail.html"
     context_object_name = "order"
 
 
 # Class-based view для редагування/видалення елементу замовлення (order item view)
-class OrderItemDetailView(DetailView):
+class OrderItemDetailView(LoginRequiredMixin, DetailView):
     model = OrderItem
     template_name = "order/order_item_detail.html"
     context_object_name = "order_item"
 
 
+@login_required
 def update_user_info(request):
     if (
         request.method == "POST"
@@ -405,6 +408,7 @@ def update_user_info(request):
     return JsonResponse({"message": "Not an AJAX request"}, status=400)
 
 
+@login_required
 def active_coupons(request):
     user = request.user  # Отримуємо поточного користувача
     active_coupons = DiscountCoupon.objects.filter(user=user, is_used=False)
@@ -434,6 +438,7 @@ def active_coupons(request):
     )
 
 
+@login_required
 def apply_coupon(request):
     # Отримайте код купона з POST-запиту
     coupon_code = request.POST.get("coupon_code")
@@ -482,6 +487,7 @@ def apply_coupon(request):
         )
 
 
+@login_required
 def apply_discount_coupon(coupon):
     # Отримайте всі товари у кошику користувача
     cart_items = CartItem.objects.filter(shopping_cart__user=coupon.user)

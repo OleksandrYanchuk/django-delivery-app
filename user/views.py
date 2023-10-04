@@ -13,7 +13,7 @@ from django.contrib.auth.mixins import LoginRequiredMixin, UserPassesTestMixin
 from django.shortcuts import render
 from geopy import Nominatim
 
-from .forms import CustomerCreationForm
+from .forms import CustomerCreationForm, CustomerUpdateForm
 from .models import Customer
 
 
@@ -42,8 +42,8 @@ def user_details(request) -> HttpResponseRedirect:
 class CustomerUpdateView(LoginRequiredMixin, UserPassesTestMixin, generic.UpdateView):
     permission_required = "user.change_own_master"
     model = Customer
-    form_class = CustomerCreationForm
-    success_url = reverse_lazy("user:customer-detail")
+    form_class = CustomerUpdateForm
+    success_url = reverse_lazy("user:index")
     template_name = "user/customer_update_form.html"
 
     def test_func(self) -> bool:
@@ -51,7 +51,7 @@ class CustomerUpdateView(LoginRequiredMixin, UserPassesTestMixin, generic.Update
         Checks if the user has permission to update the customer details.
         Returns True if the user matches the customer's user, False otherwise.
         """
-        return self.request.user.name == self.get_object().name
+        return self.request.user.pk == self.get_object().pk
 
     def handle_no_permission(self) -> HttpResponse:
         """
@@ -74,19 +74,19 @@ class CustomerDetailView(LoginRequiredMixin, generic.DetailView):
 class CustomerCreateView(generic.CreateView):
     model = Customer
     form_class = CustomerCreationForm
-    success_url = reverse_lazy("user:index.html")
+    success_url = reverse_lazy("user:index")
 
 
 class CustomerDeleteView(LoginRequiredMixin, UserPassesTestMixin, generic.DeleteView):
     model = Customer
-    success_url = reverse_lazy("user:index.html")
+    success_url = reverse_lazy("user:index")
 
     def test_func(self) -> bool:
         """
         Checks if the user has permission to delete the customer.
         Returns True if the user matches the customer's user, False otherwise.
         """
-        return self.request.user.name == self.get_object().name
+        return self.request.user.pk == self.get_object().pk
 
     def handle_no_permission(self) -> HttpResponse:
         """
