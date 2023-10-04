@@ -37,9 +37,9 @@ CRONJOBS = [
 ]
 
 # SECURITY WARNING: don't run with debug turned on in production!
-DEBUG = True
+DEBUG = os.environ.get("DJANGO_DEBUG", "") != "False"
 
-ALLOWED_HOSTS = []
+ALLOWED_HOSTS = ["127.0.0.1"]
 
 
 # Application definition
@@ -56,7 +56,7 @@ INSTALLED_APPS = [
     "crispy_bootstrap4",
     "user",
     "services",
-    # "django_google_maps",
+    "django_google_maps",
 ]
 
 MIDDLEWARE = [
@@ -108,6 +108,8 @@ DATABASES = {
     }
 }
 
+db_from_env = dj_database_url.config(conn_max_age=500)
+DATABASES["default"].update(db_from_env)
 
 # Password validation
 # https://docs.djangoproject.com/en/4.2/ref/settings/#auth-password-validators
