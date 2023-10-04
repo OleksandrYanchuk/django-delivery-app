@@ -1,4 +1,8 @@
 import requests
+from django.http import JsonResponse
+
+
+import logging
 from decimal import Decimal
 from django.contrib import messages
 from django.contrib.auth.decorators import login_required
@@ -396,26 +400,30 @@ def update_user_info(request):
 def active_coupons(request):
     user = request.user  # Отримуємо поточного користувача
     active_coupons = DiscountCoupon.objects.filter(user=user, is_used=False)
+    today_coupon_count = DiscountCoupon.get_today_coupon_count(user)
 
     if request.method == "POST":
         form = CreateCouponForm(request.POST)
         if form.is_valid():
-            DiscountCoupon.create_random_coupon(user)
-            return HttpResponseRedirect("/delivery/generate-coupon/")
+            coupon = DiscountCoupon.create_random_coupon(user)
+            if coupon:
+                return HttpResponseRedirect("/delivery/generate-coupon/")
+            else:
+                messages.error(
+                    request, "Ви вже вичерпали ліміт на сьогодні для генерації купонів."
+                )
     else:
         form = CreateCouponForm()
 
     return render(
         request,
         "coupon/active_coupons.html",
-        {"active_coupons": active_coupons, "form": form},
+        {
+            "active_coupons": active_coupons,
+            "form": form,
+            "today_coupon_count": today_coupon_count,
+        },
     )
-
-
-from django.http import JsonResponse
-
-
-import logging
 
 
 def apply_coupon(request):

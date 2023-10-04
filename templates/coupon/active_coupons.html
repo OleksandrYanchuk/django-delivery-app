@@ -4,11 +4,17 @@
   <h2>Ваші активні купони:</h2>
   <ul>
     {% for coupon in active_coupons %}
-      <li>{{ coupon.code }} - {{ coupon.discount_percentage }} % знижки - {{ coupon.shop }}</li>
-    {% empty %}
-      <li>У вас немає активних купонів.</li>
-    {% endfor %}
+    <li>
+      {{ coupon.code }} - {{ coupon.discount_percentage }} % знижки - {{ coupon.shop }} - Expires in:
+      {{ coupon.expiration_datetime }}
+    </li>
+
+    <li>У вас немає активних купонів.</li>
+  {% endfor %}
   </ul>
+
+<p>You can generate only 3 coupons per day!</p>
+<p>You have {{ today_coupon_count }} coupons generated today.</p>
 
   <h2>Створити новий купон:</h2>
   <form method="post">

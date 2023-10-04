@@ -31,6 +31,11 @@ SECRET_KEY = os.getenv("SECRET_KEY")
 
 GOOGLE_MAPS_API_KEY = os.getenv("GOOGLE_MAPS_API_KEY")
 
+# CRONJOBS settings
+CRONJOBS = [
+    ("0 3 * * *", "services.models.DiscountCoupon.remove_expired_coupons"),
+]
+
 # SECURITY WARNING: don't run with debug turned on in production!
 DEBUG = True
 
