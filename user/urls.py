@@ -4,8 +4,8 @@ from .views import (
     index,
     CustomerDetailView,
     CustomerCreateView,
-    CustomerDeleteView,
     CustomerUpdateView,
+    CustomerDeleteView,
 )
 
 

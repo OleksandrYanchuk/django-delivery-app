@@ -1,5 +1,8 @@
+import os
+
 import requests
-from django.http import JsonResponse
+from django.contrib.auth.mixins import LoginRequiredMixin
+from dotenv import load_dotenv
 
 
 import logging
@@ -36,6 +39,9 @@ from .forms import (
     OrderForm,
     CreateCouponForm,
 )
+
+
+load_dotenv()
 
 
 class ShopListView(ListView):
@@ -196,7 +202,7 @@ def shopping_cart(request):
 def checkout(request):
     if request.method == "POST":
         recaptcha_token = request.POST.get("recaptchaToken")
-        secret_key = "6LcLr2woAAAAAJ2RSZmirteuwzriGjU3Dk8qhtsa"
+        secret_key = os.getenv("CAPTCHA_KEY")
 
         # Виконайте запит на сервер reCAPTCHA Enterprise для перевірки
         response = requests.post(
@@ -355,12 +361,14 @@ class OrderCreateView(CreateView):
 
 
 # Class-based view для відображення списку замовлень (order list view)
-class OrderListView(ListView):
+class OrderListView(LoginRequiredMixin, ListView):
     model = Order
     template_name = "order/order_list.html"
-    context_object_name = (
-        "orders"  # Ім'я змінної, яку ви будете використовувати у шаблоні
-    )
+    context_object_name = "orders"
+
+    def get_queryset(self):
+        # Фільтруємо замовлення за поточним користувачем
+        return Order.objects.filter(user=self.request.user)
 
 
 class OrderDetailView(DetailView):

@@ -18,7 +18,7 @@
   {{ form|crispy }}
 
   <input type="submit" value="Login" class="btn btn-primary" />
-  <input type="hidden" name="next" value="{{ next }}" />
+  <input type="hidden" name="next" value="{% url 'services:shop_list' %}" />
 </form>
 
 <h1>
