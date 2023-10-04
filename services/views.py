@@ -207,7 +207,7 @@ def checkout(request):
 
         # Виконайте запит на сервер reCAPTCHA Enterprise для перевірки
         response = requests.post(
-            "https://recaptchaenterprise.googleapis.com/v1beta1/projects/django-delivery-app/assessments?key="
+            "https://recaptchaenterprise.googleapis.com/v1beta1/projects/ВАШ_ПРОЕКТ/assessments?key="
             + secret_key,
             json={
                 "token": recaptcha_token,
@@ -217,8 +217,20 @@ def checkout(request):
         result = response.json()
 
         if result["score"] >= 0.5:
-            return HttpResponseRedirect(reverse("order_create"))
+            # CAPTCHA пройшла перевірку, тепер ви можете оформити замовлення
+            cart_items = CartItem.objects.filter(user=request.user)
+            totals = get_totals(cart_items)
+
+            # Оформлення замовлення
+            # ...
+
+            # Видаліть всі елементи кошика, пов'язані з поточним користувачем
+            cart_items.delete()
+
+            return JsonResponse({"success": True})
         else:
+            # CAPTCHA не пройдена
+            # Обробіть це відповідним чином і повідомте користувача
             return JsonResponse({"success": False})
     else:
         cart_items = CartItem.objects.filter(user=request.user)
