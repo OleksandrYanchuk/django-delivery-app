@@ -6,6 +6,7 @@ dj-database-url==2.1.0
 Django==4.2.2
 django-crispy-forms==2.0
 django-debug-toolbar==4.1.0
+django-google-maps==0.13.0
 geographiclib==2.0
 geopy==2.4.0
 gunicorn==20.1.0
