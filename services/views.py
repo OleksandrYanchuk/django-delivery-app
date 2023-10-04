@@ -207,7 +207,7 @@ def checkout(request):
 
         # Виконайте запит на сервер reCAPTCHA Enterprise для перевірки
         response = requests.post(
-            "https://recaptchaenterprise.googleapis.com/v1beta1/projects/ВАШ_ПРОЕКТ/assessments?key="
+            "https://recaptchaenterprise.googleapis.com/v1beta1/projects/django-delivery-app/assessments?key="
             + secret_key,
             json={
                 "token": recaptcha_token,
