@@ -299,6 +299,21 @@ class OrderCreateView(LoginRequiredMixin, CreateView):
 
     @transaction.atomic
     def form_valid(self, form):
+        # Перевірка reCAPTCHA
+        recaptcha_token = self.request.POST.get("recaptcha_token")
+        recaptcha_secret_key = os.getenv("CAPTCHA_KEY")
+        recaptcha_verify_url = "https://www.google.com/recaptcha/api/siteverify"
+        recaptcha_data = {
+            "secret": recaptcha_secret_key,
+            "response": recaptcha_token,
+        }
+
+        recaptcha_response = requests.post(recaptcha_verify_url, data=recaptcha_data)
+        recaptcha_result = recaptcha_response.json()
+
+        if not recaptcha_result.get("success"):
+            # Якщо перевірка reCAPTCHA не пройшла, обробте це, наприклад, повернувши помилку
+            return HttpResponseBadRequest("reCAPTCHA verification failed")
         form.instance.user = self.request.user
         form.instance.total_amount = 0  # Початкова сума замовлення
 
