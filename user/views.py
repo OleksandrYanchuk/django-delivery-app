@@ -1,5 +1,4 @@
 from django.contrib.auth.decorators import login_required
-from django.db import transaction
 from django.http import (
     HttpResponseForbidden,
     HttpResponseRedirect,
@@ -11,7 +10,6 @@ from django.urls import reverse_lazy
 from django.views import generic
 from django.contrib.auth.mixins import LoginRequiredMixin, UserPassesTestMixin
 from django.shortcuts import render
-from geopy import Nominatim
 
 from .forms import CustomerCreationForm, CustomerUpdateForm
 from .models import Customer
@@ -34,7 +32,6 @@ def index(request: HttpRequest) -> HttpResponse:
 
 @login_required
 def user_details(request) -> HttpResponseRedirect:
-    """View function to handle user details based on their role."""
     user = request.user
     return HttpResponseRedirect(f"/customer/{user.pk}")
 
@@ -47,17 +44,9 @@ class CustomerUpdateView(LoginRequiredMixin, UserPassesTestMixin, generic.Update
     template_name = "user/customer_update_form.html"
 
     def test_func(self) -> bool:
-        """
-        Checks if the user has permission to update the customer details.
-        Returns True if the user matches the customer's user, False otherwise.
-        """
         return self.request.user.pk == self.get_object().pk
 
     def handle_no_permission(self) -> HttpResponse:
-        """
-        Handles the case when the user does not have permission to update the customer details.
-        Returns an HTTP Forbidden response with a rendered template for 403 error.
-        """
         return HttpResponseForbidden(
             render_to_string(
                 "user/403.html",
@@ -82,17 +71,9 @@ class CustomerDeleteView(LoginRequiredMixin, UserPassesTestMixin, generic.Delete
     success_url = reverse_lazy("user:index")
 
     def test_func(self) -> bool:
-        """
-        Checks if the user has permission to delete the customer.
-        Returns True if the user matches the customer's user, False otherwise.
-        """
         return self.request.user.pk == self.get_object().pk
 
     def handle_no_permission(self) -> HttpResponse:
-        """
-        Handles the case when the user does not have permission to delete the customer.
-        Returns an HTTP Forbidden response with a rendered template for 403 error.
-        """
         return HttpResponseForbidden(
             render_to_string(
                 "user/403.html",

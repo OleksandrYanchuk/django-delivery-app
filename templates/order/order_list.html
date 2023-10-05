@@ -9,7 +9,7 @@
         <th>Date Created</th>
         <th>Total Amount</th>
         <th>Total Amount wih discount</th>
-        <th>User</th> <!-- Додано стовпець для імені користувача -->
+        <th>User</th>
         <th>Actions</th>
       </tr>
     </thead>
@@ -20,7 +20,7 @@
           <td>{{ order.created_at|date:"Y-m-d H:i:s" }}</td>
           <td>${{ order.total_amount }}</td>
           <td>${{ order.total_with_discount }}</td>
-          <td>{{ order.user.username }}</td> <!-- Додано відображення імені користувача -->
+          <td>{{ order.user.username }}</td>
           <td>
             <a href="{% url 'services:order_detail' order.id %}">View Details</a>
           </td>

@@ -14,14 +14,12 @@ from django.http import (
     HttpResponseRedirect,
     JsonResponse,
     HttpResponseBadRequest,
-    HttpResponse,
 )
-from django.shortcuts import render, redirect, get_object_or_404
+from django.shortcuts import render, get_object_or_404
 from django.template.loader import render_to_string
 from django.urls import reverse_lazy, reverse
 from django.utils import timezone
-from django.views.decorators.http import require_POST
-from django.views.generic import ListView, DetailView, CreateView, UpdateView
+from django.views.generic import ListView, DetailView, CreateView
 from .models import (
     Shop,
     Goods,
@@ -61,9 +59,6 @@ class CreateShopView(LoginRequiredMixin, CreateView):
     form_class = ShopForm
     template_name = "create_shop.html"
     success_url = reverse_lazy("shop_list")
-
-
-# Аналогічно, додайте класи для Goods, ShoppingCart і CartItem
 
 
 class GoodsListView(LoginRequiredMixin, ListView):
@@ -117,9 +112,9 @@ class ShopGoodsDetailView(LoginRequiredMixin, DetailView):
 
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
-        shop = self.get_object()  # Отримуємо об'єкт магазину
-        goods = Goods.objects.filter(shop_name=shop)  # Фільтруємо товари за магазином
-        context["goods"] = goods  # Передаємо список товарів у контекст
+        shop = self.get_object()
+        goods = Goods.objects.filter(shop_name=shop)
+        context["goods"] = goods
         context["shop_list"] = Shop.objects.all()
         return context
 
@@ -131,22 +126,18 @@ def add_to_cart(request):
         if goods_id:
             goods = get_object_or_404(Goods, id=goods_id)
 
-            # Перевірка, чи у користувача вже є кошик для покупок
             shopping_cart, created = ShoppingCart.objects.get_or_create(
                 user=request.user
             )
 
-            # Перевірка, чи всі товари в кошику належать до одного магазину
             if (
                 shopping_cart.goods.filter(shop_name=goods.shop_name).exists()
                 or not shopping_cart.goods.all()
             ):
-                # Створення нового елемента кошика з товаром і додавання до кошика
                 cart_item, created = CartItem.objects.get_or_create(
                     shopping_cart=shopping_cart, goods=goods
                 )
 
-                # Якщо товар вже був у кошику, збільшуємо кількість на одиницю
                 if not created:
                     cart_item.quantity += 1
                     cart_item.save()
@@ -155,22 +146,18 @@ def add_to_cart(request):
                     reverse("services:shop_goods_detail", args=[goods.shop_name.id])
                 )
             else:
-                # Додайте повідомлення про помилку до контексту
                 messages.error(
                     request, "Cannot add items from different shops to the cart"
                 )
                 return HttpResponseRedirect(reverse("services:shop_goods_detail"))
 
-    # Якщо дані некоректні або HTTP метод GET
     return HttpResponseRedirect(reverse("services:shop_goods_detail"))
 
 
 @login_required
 def shopping_cart(request):
-    # Отримайте кошик поточного користувача
     shopping_cart, created = ShoppingCart.objects.get_or_create(user=request.user)
 
-    # Отримайте всі товари у кошику
     cart_items = CartItem.objects.filter(shopping_cart=shopping_cart)
     totals = get_totals(cart_items)
     lat = 0
@@ -208,14 +195,10 @@ def update_cart_item(request):
         item_id = request.POST.get("item_id")
         new_quantity = int(request.POST.get("new_quantity", 1))
 
-        # Отримайте об'єкт cart_item за його ідентифікатором item_id
         cart_item = get_object_or_404(CartItem, id=item_id)
-
-        # Оновіть кількість товару
         cart_item.quantity = new_quantity
         cart_item.save()
 
-        # Отримайте оновлену інформацію про товар для повернення на клієнтський бік
         updated_item_html = render_to_string(
             "shopping_cart/shopping_cart.html",
             {"item": cart_item},
@@ -259,9 +242,7 @@ class OrderCreateView(LoginRequiredMixin, CreateView):
         form.instance.user = self.request.user
         # Перевірка reCAPTCHA
         recaptcha_token = self.request.POST.get("recaptcha_token")
-        recaptcha_secret_key = os.getenv(
-            "CAPTCHA_KEY"
-        )  # Отримайте секретний ключ з налаштувань Django
+        recaptcha_secret_key = os.getenv("CAPTCHA_KEY")
         recaptcha_verify_url = "https://www.google.com/recaptcha/api/siteverify"
         recaptcha_data = {
             "secret": recaptcha_secret_key,
@@ -272,27 +253,21 @@ class OrderCreateView(LoginRequiredMixin, CreateView):
         recaptcha_result = recaptcha_response.json()
 
         if not recaptcha_result.get("success"):
-            # Якщо перевірка reCAPTCHA не пройшла, обробте це, наприклад, повернувши помилку
             return HttpResponseBadRequest("reCAPTCHA verification failed")
-        form.instance.total_amount = 0  # Початкова сума замовлення
+        form.instance.total_amount = 0
 
-        # Створіть номер замовлення на основі поточного часу та дати
         now = timezone.now()
         order_number = f"{now.strftime('%Y%m%d%H%M%S')}_{self.request.user.id}"
 
-        form.instance.order_number = order_number  # Встановіть номер замовлення
+        form.instance.order_number = order_number
 
-        # Отримайте кошик поточного користувача
         shopping_cart, created = ShoppingCart.objects.get_or_create(
             user=self.request.user
         )
-        # Retrieve the coupon code from the session if it exists
         coupon_code = self.request.session.get("coupon_code")
 
-        # Отримайте всі товари у кошику
         cart_items = CartItem.objects.filter(shopping_cart=shopping_cart)
 
-        # Обчисліть суму всіх товарів у кошику і встановіть її як total_amount
         total_amount = Decimal("0.00")
         for cart_item in cart_items:
             total_amount += Decimal(str(cart_item.quantity)) * cart_item.goods.price
@@ -302,8 +277,6 @@ class OrderCreateView(LoginRequiredMixin, CreateView):
         total_with_discount = total_amount
 
         if coupon_code:
-            # Perform any additional validation or processing for the coupon
-            # Mark the coupon as used
             try:
                 coupon = DiscountCoupon.objects.get(code=coupon_code, is_used=False)
                 total_with_discount = form.instance.total_amount - (
@@ -312,17 +285,13 @@ class OrderCreateView(LoginRequiredMixin, CreateView):
                 coupon.is_used = True
                 coupon.save()
             except DiscountCoupon.DoesNotExist:
-                pass  # Handle the case where the coupon doesn't exist or is already used
+                pass
 
-        # Збережіть об'єкт Order
         order = form.save()
         if total_with_discount:
-            order.total_with_discount = (
-                total_with_discount  # You can modify this logic as needed
-            )
+            order.total_with_discount = total_with_discount
             order.save()
 
-        # Створіть об'єкти OrderItem для всіх товарів у кошику
         for cart_item in cart_items:
             OrderItem.objects.create(
                 order=order,
@@ -330,20 +299,17 @@ class OrderCreateView(LoginRequiredMixin, CreateView):
                 quantity=cart_item.quantity,
             )
 
-        # Видаліть всі елементи кошика, пов'язані з поточним користувачем
         cart_items.delete()
 
         return super().form_valid(form)
 
 
-# Class-based view для відображення списку замовлень (order list view)
 class OrderListView(LoginRequiredMixin, ListView):
     model = Order
     template_name = "order/order_list.html"
     context_object_name = "orders"
 
     def get_queryset(self):
-        # Фільтруємо замовлення за поточним користувачем
         return Order.objects.filter(user=self.request.user)
 
 
@@ -353,7 +319,6 @@ class OrderDetailView(LoginRequiredMixin, DetailView):
     context_object_name = "order"
 
 
-# Class-based view для редагування/видалення елементу замовлення (order item view)
 class OrderItemDetailView(LoginRequiredMixin, DetailView):
     model = OrderItem
     template_name = "order/order_item_detail.html"
@@ -368,11 +333,7 @@ def update_user_info(request):
     ):
         new_phone_number = request.POST.get("phone_number")
         new_address = request.POST.get("address")
-
-        # Отримайте користувача з об'єкта запиту
         user = request.user
-
-        # Оновіть дані користувача
         user.phone_number = new_phone_number
         user.address = new_address
         user.save()
@@ -384,7 +345,7 @@ def update_user_info(request):
 
 @login_required
 def active_coupons(request):
-    user = request.user  # Отримуємо поточного користувача
+    user = request.user
     active_coupons = DiscountCoupon.objects.filter(user=user, is_used=False)
     today_coupon_count = DiscountCoupon.get_today_coupon_count(user)
 
@@ -414,34 +375,23 @@ def active_coupons(request):
 
 @login_required
 def apply_coupon(request):
-    # Отримайте код купона з POST-запиту
     coupon_code = request.POST.get("coupon_code")
-
-    # Отримайте поточного користувача
     user = request.user
 
     try:
-        # Знайдіть купон за кодом і перевірте, чи він активний та належить користувачу
         coupon = DiscountCoupon.objects.get(code=coupon_code, is_used=False, user=user)
-
-        # Отримайте всі товари у кошику користувача
         cart_items = CartItem.objects.filter(shopping_cart__user=user)
 
-        # Перевірте, чи купон відноситься до потрібного магазину
         if all(item.goods.shop_name.id == coupon.shop.id for item in cart_items):
-            # Застосуйте знижку до суми замовлення
             discount_amount = apply_discount_coupon(coupon)
             print(f"Discount amount applied: {discount_amount}")
 
             request.session["coupon_code"] = coupon_code
 
-            # Підготуйте дані для відправки у відповіді
             response_data = {
                 "success": True,
                 "discount_amount": discount_amount,
             }
-
-            # Виведення інформації у журнал сервера
             logging.info(f"Response data: {response_data}")
 
             return JsonResponse(response_data)
@@ -463,16 +413,8 @@ def apply_coupon(request):
 
 @login_required
 def apply_discount_coupon(coupon):
-    # Отримайте всі товари у кошику користувача
     cart_items = CartItem.objects.filter(shopping_cart__user=coupon.user)
-
-    # Обчислення загальної суми всіх товарів у кошику
     totals = get_totals(cart_items)
-
-    # Обчислення знижки за допомогою відсоткового значення
     discount_percentage = Decimal(coupon.discount_percentage) / 100
     discount_amount = sum(totals) - (sum(totals) * discount_percentage)
-
-    # Реалізуйте логіку оновлення замовлення з врахуванням знижки
-    # Поверніть суму знижки, щоб відобразити на сторінці
     return discount_amount

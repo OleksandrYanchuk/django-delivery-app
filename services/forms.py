@@ -28,7 +28,6 @@ class ShoppingCartForm(forms.ModelForm):
 
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
-        # Заблокуйте поля name і email, щоб вони були лише для перегляду
         self.fields["name"].widget.attrs["readonly"] = True
         self.fields["email"].widget.attrs["readonly"] = True
         self.fields["user_lat"].widget.attrs["readonly"] = True
@@ -53,11 +52,9 @@ class OrderItemForm(forms.ModelForm):
         fields = ["product", "quantity"]
 
 
-# Форма для створення купону
 class CreateCouponForm(forms.Form):
     pass
 
 
-# Форма для відображення активних купонів
 class ActiveCouponsForm(forms.Form):
     pass

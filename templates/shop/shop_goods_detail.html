@@ -19,14 +19,12 @@
                     <th>ID</th>
                     <th>Name</th>
                     <th>Price</th>
-                    <!-- Додайте інші поля товарів, якщо вони є -->
                 </tr>
                 {% for good in goods %}
                     <tr>
                         <td>{{ good.id }}</td>
                         <td>{{ good.name }}</td>
                         <td>{{ good.price }}</td>
-                        <!-- Додайте інші поля товару, якщо вони є -->
                         <td>
                             <button class="add-to-cart" data-good-id="{{ good.id }}">Add to Cart</button>
                         </td>
@@ -42,7 +40,6 @@
 <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
 <script>
     $(document).ready(function() {
-        // Обробник натискання на кнопку "Add to Cart"
         $(".add-to-cart").on("click", function() {
             var goodId = $(this).data("good-id");
 
@@ -54,12 +51,9 @@
                     csrfmiddlewaretoken: "{{ csrf_token }}"
                 },
                 success: function(response) {
-                    // Ваш код для обробки успішного додавання товару до кошика
-                    // Наприклад, відобразити повідомлення або оновити інформацію про кошик
                     goodId(location.replace(location.href));
                 },
                 error: function(xhr, textStatus, errorThrown) {
-                    // Ваш код для обробки помилки під час виконання запиту
                     goodId(location.replace(location.href));
                 }
             });
