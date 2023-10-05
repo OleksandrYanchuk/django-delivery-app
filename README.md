@@ -1,4 +1,4 @@
-<img src="static/img/logo.jpg" align="right" />
+<img src="static/img/logo.jpg" align="right" width="100" height="100" />
 
 # django-delivery-app
 
