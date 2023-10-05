@@ -79,9 +79,11 @@
 </form>
 
 
-
-<button type="button" id="checkout-button">Checkout</button>
-<div id="recaptcha" data-sitekey="6LcLr2woAAAAAO4Lae1NLFiDXsz4kbNOUZBqk7GV"></div>
+<form method="post" action="{% url 'services:order_create' %}">
+  {% csrf_token %}
+<button type="button" id="checkout-button" class="g-recaptcha" data-sitekey="6LcLr2woAAAAAO4Lae1NLFiDXsz4kbNOUZBqk7GV" data-callback='onSubmit' data-action='checkout'>Checkout</button>
+<input type="hidden" id="recaptcha-token" name="recaptcha_token" value="">
+</form>
 
 
 
@@ -103,24 +105,30 @@
 <div id="map" style="width: 80%; height: 400px; margin: 10px auto;"></div>
 
 <script>
-document.addEventListener("DOMContentLoaded", function () {
-  const checkoutButton = document.getElementById("checkout-button");
+   function onSubmit(token) {
+     document.getElementById("demo-form").submit();
+   }
+</script>
 
-  if (checkoutButton) {
-    checkoutButton.addEventListener("click", onClick);
-  }
-
-  function onClick(e) {
-    e.preventDefault();
-    grecaptcha.enterprise.ready(async () => {
-      const token = await grecaptcha.enterprise.execute('6LcLr2woAAAAAO4Lae1NLFiDXsz4kbNOUZBqk7GV', {action: 'LOGIN'});
-      // IMPORTANT: The 'token' that results from execute is an encrypted response sent by
-      // reCAPTCHA Enterprise to the end user's browser.
-      // This token must be validated by creating an assessment.
-      // See https://cloud.google.com/recaptcha-enterprise/docs/create-assessment
+<script>
+  $("#checkout-button").on("click", function () {
+    grecaptcha.enterprise.execute('6LcLr2woAAAAAO4Lae1NLFiDXsz4kbNOUZBqk7GV', { action: 'checkout' }).then(function (token) {
+      $.ajax({
+        type: "POST",
+        url: "{% url 'services:order_create' %}",
+        data: {
+          csrfmiddlewaretoken: "{{ csrf_token }}",
+          recaptcha_token: token,
+        },
+        success: function (data) {
+          alert("Order created successfully!");
+          window.location.href = "{% url 'services:order_list' %}";
+        },
+      });
+    }).catch(function (error) {
+      console.error("reCAPTCHA verification failed: " + error);
     });
-  }
-});
+  });
 </script>
 
 <script>
@@ -298,10 +306,6 @@ window.initMap = initMap;
 
 </script>
 
-
-
-
-
 <script>
 
   $(document).ready(function () {
@@ -351,26 +355,6 @@ window.initMap = initMap;
         },
       });
     });
-
-    // Обробник події для кнопки "Checkout"
-    $("#checkout-button").on("click", function () {
-      // Відправляємо AJAX-запит для створення замовлення і очищення кошика
-      $.ajax({
-        type: "POST",
-        url: "{% url 'services:order_create' %}",
-        data: {
-          csrfmiddlewaretoken: "{{ csrf_token }}",
-        },
-        success: function (data) {
-          // Після успішного створення замовлення і очищення кошика,
-          // ви можете перенаправити користувача на сторінку замовлення або виконати інші дії
-          alert("Order created successfully!");
-          // Приклад перенаправлення користувача на сторінку замовлення
-          window.location.href = "{% url 'services:order_list' %}";
-        },
-      });
-    });
-  });
 </script>
 
 <script>

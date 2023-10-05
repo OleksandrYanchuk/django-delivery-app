@@ -200,49 +200,6 @@ def shopping_cart(request):
 
 
 @login_required
-def checkout(request):
-    if request.method == "POST":
-        recaptcha_token = request.POST.get("recaptchaToken")
-        secret_key = os.getenv("CAPTCHA_KEY")
-
-        # Виконайте запит на сервер reCAPTCHA Enterprise для перевірки
-        response = requests.post(
-            "https://recaptchaenterprise.googleapis.com/v1beta1/projects/ВАШ_ПРОЕКТ/assessments?key="
-            + secret_key,
-            json={
-                "token": recaptcha_token,
-            },
-        )
-
-        result = response.json()
-
-        if result["score"] >= 0.5:
-            # CAPTCHA пройшла перевірку, тепер ви можете оформити замовлення
-            cart_items = CartItem.objects.filter(user=request.user)
-            totals = get_totals(cart_items)
-
-            # Оформлення замовлення
-            # ...
-
-            # Видаліть всі елементи кошика, пов'язані з поточним користувачем
-            cart_items.delete()
-
-            return JsonResponse({"success": True})
-        else:
-            # CAPTCHA не пройдена
-            # Обробіть це відповідним чином і повідомте користувача
-            return JsonResponse({"success": False})
-    else:
-        cart_items = CartItem.objects.filter(user=request.user)
-        totals = get_totals(cart_items)
-    return render(
-        request,
-        "shopping_cart/checkout.html",
-        {"cart_items": cart_items, "totals": totals},
-    )
-
-
-@login_required
 def update_cart_item(request):
     if (
         request.method == "POST"
@@ -300,6 +257,23 @@ class OrderCreateView(LoginRequiredMixin, CreateView):
     @transaction.atomic
     def form_valid(self, form):
         form.instance.user = self.request.user
+        # Перевірка reCAPTCHA
+        recaptcha_token = self.request.POST.get("recaptcha_token")
+        recaptcha_secret_key = os.getenv(
+            "CAPTCHA_KEY"
+        )  # Отримайте секретний ключ з налаштувань Django
+        recaptcha_verify_url = "https://www.google.com/recaptcha/api/siteverify"
+        recaptcha_data = {
+            "secret": recaptcha_secret_key,
+            "response": recaptcha_token,
+        }
+
+        recaptcha_response = requests.post(recaptcha_verify_url, data=recaptcha_data)
+        recaptcha_result = recaptcha_response.json()
+
+        if not recaptcha_result.get("success"):
+            # Якщо перевірка reCAPTCHA не пройшла, обробте це, наприклад, повернувши помилку
+            return HttpResponseBadRequest("reCAPTCHA verification failed")
         form.instance.total_amount = 0  # Початкова сума замовлення
 
         # Створіть номер замовлення на основі поточного часу та дати
