@@ -80,7 +80,7 @@
 
 
 
-<button type="button" id="checkout-button" data-sitekey="6LcLr2woAAAAAO4Lae1NLFiDXsz4kbNOUZBqk7GV">Checkout</button>
+<button type="button" id="checkout-button">Checkout</button>
 <div id="recaptcha" data-sitekey="6LcLr2woAAAAAO4Lae1NLFiDXsz4kbNOUZBqk7GV"></div>
 
 
@@ -303,82 +303,76 @@ window.initMap = initMap;
 
 
 <script>
-$(document).ready(function() {
-            // Функція для оновлення сторінки без перезавантаження кешу
-            function refreshPage() {
-                location.reload();
-            }
 
-            $(".quantity-input").on("input", function() {
-                const itemId = $(this).data("item-id");
-                const newQuantity = $(this).val();
-                $.ajax({
-                    type: "POST",
-                    url: "{% url 'services:update_cart_item' %}",
-                    data: {
-                        item_id: itemId,
-                        new_quantity: newQuantity,
-                        csrfmiddlewaretoken: "{{ csrf_token }}",
-                    },
-                    success: function(data) {
-                        // Оновлюємо відповідну частину сторінки з оновленою інформацією про кошик
-                        $("#total-" + itemId).html(data.updated_total_html);
-                        // Оновлюємо "Total to Pay" на сторінці
-                        $("#total-to-pay").text(data.total_to_pay);
-                        // Запускаємо таймер для оновлення сторінки через 1 секунду
-                        setTimeout(refreshPage, 1000);
-                    },
-                });
-            });
+  $(document).ready(function () {
+    // Функція для оновлення сторінки без перезавантаження кешу
+    function refreshPage() {
+      location.reload();
+    }
 
-            $(".remove-cart-item").on("click", function() {
-                const itemId = $(this).data("item-id");
-                $.ajax({
-                    type: "POST",
-                    url: "{% url 'services:remove_cart_item' %}",
-                    data: {
-                        item_id: itemId,
-                        csrfmiddlewaretoken: "{{ csrf_token }}",
-                    },
-                    success: function(data) {
-                        // Видаляємо відповідний рядок зі сторінки
-                        $("#item-" + itemId).remove();
-                        // Оновлюємо "Total to Pay" на сторінці
-                        $("#total-to-pay").text(data.total_to_pay);
-                        // Запускаємо таймер для оновлення сторінки через 1 секунду
-                        setTimeout(refreshPage, 1000);
-                    },
-                });
-            });
+    $(".quantity-input").on("input", function () {
+      const itemId = $(this).data("item-id");
+      const newQuantity = $(this).val();
+      $.ajax({
+        type: "POST",
+        url: "{% url 'services:update_cart_item' %}",
+        data: {
+          item_id: itemId,
+          new_quantity: newQuantity,
+          csrfmiddlewaretoken: "{{ csrf_token }}",
+        },
+        success: function (data) {
+          // Оновлюємо відповідну частину сторінки з оновленою інформацією про кошик
+          $("#total-" + itemId).html(data.updated_total_html);
+          // Оновлюємо "Total to Pay" на сторінці
+          $("#total-to-pay").text(data.total_to_pay);
+          // Запускаємо таймер для оновлення сторінки через 1 секунду
+          setTimeout(refreshPage, 1000);
+        },
+      });
+    });
 
-            // Обробник події для кнопки "Checkout"
-            $("#checkout-button").on("click", function() {
-                // Перевірка reCAPTCHA перед відправкою AJAX-запиту
-                grecaptcha.enterprise.execute('6LcLr2woAAAAAO4Lae1NLFiDXsz4kbNOUZBqk7GV', {
-                    action: 'checkout'
-                }).then(function(token) {
-                    // Виконуємо AJAX-запит тільки після успішної перевірки reCAPTCHA
-                    $.ajax({
-                        type: "POST",
-                        url: "{% url 'services:order_create' %}",
-                        data: {
-                            csrfmiddlewaretoken: "{{ csrf_token }}",
-                            recaptcha_token: token, // Включаємо токен reCAPTCHA у дані запиту
-                        },
-                        success: function(data) {
-                            // Після успішного створення замовлення і очищення кошика,
-                            // ви можете перенаправити користувача на сторінку замовлення або виконати інші дії
-                            alert("Order created successfully!");
-                            // Приклад перенаправлення користувача на сторінку замовлення
-                            window.location.href = "{% url 'services:order_list' %}";
-                        },
-                    });
-                }).catch(function(error) {
-                    // Обробка помилок перевірки reCAPTCHA
-                    console.error("reCAPTCHA verification failed: " + error);
-                    // Можливо, покажіть повідомлення про помилку користувачеві
-                }),
+    $(".remove-cart-item").on("click", function () {
+      const itemId = $(this).data("item-id");
+      $.ajax({
+        type: "POST",
+        url: "{% url 'services:remove_cart_item' %}",
+        data: {
+          item_id: itemId,
+          csrfmiddlewaretoken: "{{ csrf_token }}",
+        },
+        success: function (data) {
+          // Видаляємо відповідний рядок зі сторінки
+          $("#item-" + itemId).remove();
+          // Оновлюємо "Total to Pay" на сторінці
+          $("#total-to-pay").text(data.total_to_pay);
+          // Запускаємо таймер для оновлення сторінки через 1 секунду
+          setTimeout(refreshPage, 1000);
+        },
+      });
+    });
 
+    // Обробник події для кнопки "Checkout"
+    $("#checkout-button").on("click", function () {
+    grecaptcha.enterprise.execute('6LcLr2woAAAAAO4Lae1NLFiDXsz4kbNOUZBqk7GV', { action: 'checkout' }).then(function (token) {
+      // Відправляємо AJAX-запит для створення замовлення і очищення кошика
+      $.ajax({
+        type: "POST",
+        url: "{% url 'services:order_create' %}",
+        data: {
+          csrfmiddlewaretoken: "{{ csrf_token }}",
+        },
+        success: function (data) {
+          // Після успішного створення замовлення і очищення кошика,
+          // ви можете перенаправити користувача на сторінку замовлення або виконати інші дії
+          alert("Order created successfully!");
+          // Приклад перенаправлення користувача на сторінку замовлення
+          window.location.href = "{% url 'services:order_list' %}";
+        },
+        },
+      });
+    });
+  });
 </script>
 
 <script>
