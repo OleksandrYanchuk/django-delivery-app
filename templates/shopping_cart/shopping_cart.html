@@ -307,7 +307,6 @@ window.initMap = initMap;
 </script>
 
 <script>
-
   $(document).ready(function () {
     // Функція для оновлення сторінки без перезавантаження кешу
     function refreshPage() {
@@ -319,11 +318,11 @@ window.initMap = initMap;
       const newQuantity = $(this).val();
       $.ajax({
         type: "POST",
-        url: "{% url 'services:update_cart_item' %}",
+        url: "/delivery/update_cart_item/",
         data: {
           item_id: itemId,
           new_quantity: newQuantity,
-          csrfmiddlewaretoken: "{{ csrf_token }}",
+          csrfmiddlewaretoken: "Wyc1C7ikDtipgW7oQwoqu2gJWrIQGwVHjs9sUhdtXJcCPKffU5WhyOIjTMrnuX9t",
         },
         success: function (data) {
           // Оновлюємо відповідну частину сторінки з оновленою інформацією про кошик
@@ -340,10 +339,10 @@ window.initMap = initMap;
       const itemId = $(this).data("item-id");
       $.ajax({
         type: "POST",
-        url: "{% url 'services:remove_cart_item' %}",
+        url: "/delivery/remove_cart_item/",
         data: {
           item_id: itemId,
-          csrfmiddlewaretoken: "{{ csrf_token }}",
+          csrfmiddlewaretoken: "Wyc1C7ikDtipgW7oQwoqu2gJWrIQGwVHjs9sUhdtXJcCPKffU5WhyOIjTMrnuX9t",
         },
         success: function (data) {
           // Видаляємо відповідний рядок зі сторінки
@@ -355,6 +354,7 @@ window.initMap = initMap;
         },
       });
     });
+  });
 </script>
 
 <script>
