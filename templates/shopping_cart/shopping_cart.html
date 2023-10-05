@@ -100,15 +100,8 @@
 
 <p><span id="output"></span></p>
 
-
-<!-- Додайте блок для відображення карти -->
 <div id="map" style="width: 80%; height: 400px; margin: 10px auto;"></div>
 
-<script>
-   function onSubmit(token) {
-     document.getElementById("demo-form").submit();
-   }
-</script>
 
 <script>
   $("#checkout-button").on("click", function () {
@@ -156,7 +149,7 @@ function initMap() {
 
   let customerMarker;
 
-  let currentMarker; // Змінна для збереження поточного маркера на карті
+  let currentMarker;
   let currentShopMarker;
   var shopLat = {{ lat }};
   var shopLng = {{ lng }};
@@ -197,7 +190,6 @@ function initMap() {
 });
 
   myLocationButton.addEventListener('click', function () {
-    // Отримайте місце розташування користувача (геолокацію)
     console.log("Button clicked");
     if (navigator.geolocation) {
       navigator.geolocation.getCurrentPosition(function (position) {
@@ -206,13 +198,10 @@ function initMap() {
           lng: position.coords.longitude,
         };
 
-        // Очистіть попередній маркер (якщо він існує)
         if (customerMarker) {
           customerMarker.setMap(null);
         }
 
-
-        // Створіть новий маркер на місці розташування користувача
         customerMarker = new google.maps.Marker({
           position: { lat: position.coords.latitude, lng: position.coords.longitude },
           map: map,
@@ -220,9 +209,7 @@ function initMap() {
           draggable: true,
         });
 
-        // Отримайте адресу на основі координат маркера та встановіть її у полі "address"
         reverseGeocode(userLatLng, function (address) {
-          // Встановіть отриману адресу у полі "address"
           document.getElementById('address').value = address;
           document.getElementById('address-text').textContent = address;
         });
@@ -234,13 +221,8 @@ function initMap() {
   });
 
   map.addListener('click', function(event) {
-    // Отримайте координати місця кліку
     const clickedLatLng = event.latLng;
-
-    // Перемістіть маркер customerMarker в нове місце кліку
     customerMarker.setPosition(clickedLatLng);
-
-    // Отримайте адресу на основі нових координат та відображайте її
     reverseGeocode(clickedLatLng, function(address) {
       document.getElementById('address').value = address;
       document.getElementById('address-text').textContent = address;
@@ -262,11 +244,9 @@ function initMap() {
   );
 }
 
-
 document.getElementById('calculate-route-button').addEventListener('click', function () {
    window.location.href = "{% url 'services:shopping_cart' %}";
 });
-
 
 function displayRoute(origin, destination, service, display) {
   service
@@ -308,7 +288,6 @@ window.initMap = initMap;
 
 <script>
   $(document).ready(function () {
-    // Функція для оновлення сторінки без перезавантаження кешу
     function refreshPage() {
       location.reload();
     }
@@ -325,11 +304,8 @@ window.initMap = initMap;
           csrfmiddlewaretoken: "Wyc1C7ikDtipgW7oQwoqu2gJWrIQGwVHjs9sUhdtXJcCPKffU5WhyOIjTMrnuX9t",
         },
         success: function (data) {
-          // Оновлюємо відповідну частину сторінки з оновленою інформацією про кошик
           $("#total-" + itemId).html(data.updated_total_html);
-          // Оновлюємо "Total to Pay" на сторінці
           $("#total-to-pay").text(data.total_to_pay);
-          // Запускаємо таймер для оновлення сторінки через 1 секунду
           setTimeout(refreshPage, 1000);
         },
       });
@@ -345,11 +321,8 @@ window.initMap = initMap;
           csrfmiddlewaretoken: "Wyc1C7ikDtipgW7oQwoqu2gJWrIQGwVHjs9sUhdtXJcCPKffU5WhyOIjTMrnuX9t",
         },
         success: function (data) {
-          // Видаляємо відповідний рядок зі сторінки
           $("#item-" + itemId).remove();
-          // Оновлюємо "Total to Pay" на сторінці
           $("#total-to-pay").text(data.total_to_pay);
-          // Запускаємо таймер для оновлення сторінки через 1 секунду
           setTimeout(refreshPage, 1000);
         },
       });
@@ -360,7 +333,6 @@ window.initMap = initMap;
 <script>
   var csrfToken = $('input[name="csrfmiddlewaretoken"]').val();
   $(document).ready(function () {
-    // Функція для оновлення інформації користувача
     function updateUserInfo() {
       const newPhoneNumber = $("#phone_number").val();
       const newAddress = $("#address").val();
@@ -383,26 +355,21 @@ window.initMap = initMap;
       });
     }
 
-    // Обробник події для кнопки "Update Info"
     $("#update-user-info").on("click", updateUserInfo);
   });
 </script>
 <script>
 $(document).ready(function () {
-  // Перевіряємо, чи є збережений купон у локальному сховищі
   var savedCoupon = localStorage.getItem('coupon_code');
   if (savedCoupon) {
-    $('#coupon-code').val(savedCoupon); // Встановлюємо значення поля введеного купону
+    $('#coupon-code').val(savedCoupon);
   }
 
-  // При кліку на кнопку "Apply Coupon"
   $('#apply-coupon-button').click(function () {
-    var couponCode = $('#coupon-code').val(); // Отримання введеного коду купона
+    var couponCode = $('#coupon-code').val();
     if (couponCode) {
-      // Зберігаємо введений купон у локальному сховищі
       localStorage.setItem('coupon_code', couponCode);
 
-      // Виклик AJAX-запиту для валідації купона
       $.ajax({
         type: 'POST',
         url: "{% url 'services:apply_coupon' %}",
@@ -410,13 +377,11 @@ $(document).ready(function () {
           'coupon_code': couponCode,
           csrfmiddlewaretoken: "{{ csrf_token }}",
         },
-        dataType: 'json', // Очікуємо відповідь у форматі JSON
+        dataType: 'json',
         success: function (data) {
-          // Log the data to the console
           console.log(data);
-
           if (data.success) {
-            var discountAmount = parseFloat(data.discount_amount); // Перетворення на число
+            var discountAmount = parseFloat(data.discount_amount);
             $("#total-amount").text(discountAmount.toFixed(2));
             alert("Coupon successfully applied!");
           } else {
@@ -431,10 +396,6 @@ $(document).ready(function () {
   });
 });
 
-
-
 </script>
-
-
 
 {% endblock %}

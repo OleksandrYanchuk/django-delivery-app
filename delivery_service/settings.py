@@ -37,7 +37,7 @@ CRONJOBS = [
 ]
 
 # SECURITY WARNING: don't run with debug turned on in production!
-DEBUG = os.environ.get("DJANGO_DEBUG", "") != "False"
+DEBUG = "False"
 
 ALLOWED_HOSTS = ["127.0.0.1", "django-delivery-app.onrender.com"]
 

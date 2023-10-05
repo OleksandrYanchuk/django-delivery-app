@@ -32,13 +32,11 @@ def update_customer_coordinates(sender, instance, **kwargs):
     geolocator = Nominatim(user_agent="myGeocoder")
     if instance.address:
         parts = instance.address.split(",")
-        # Перевірити, чи останнє слово є числом з довжиною 5 (поштовий індекс)
+
         last_word = parts[-1].strip()
         if last_word.isdigit() and len(last_word) == 5:
-            # Якщо останнє слово - це поштовий індекс, видалити його
             new_address = ", ".join(parts[:-1])
         else:
-            # Якщо останнє слово не є поштовим індексом, залишити адресу без змін
             new_address = instance.address
 
         location = geolocator.geocode(new_address)

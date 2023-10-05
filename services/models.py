@@ -29,23 +29,17 @@ class Goods(models.Model):
 
 
 class ShoppingCart(models.Model):
-    user = models.ForeignKey(
-        Customer, on_delete=models.CASCADE
-    )  # Посилання на користувача, який володіє кошиком
-    goods = models.ManyToManyField(
-        "Goods", through="CartItem"
-    )  # Товари в кошику через проміжну модель
+    user = models.ForeignKey(Customer, on_delete=models.CASCADE)
+    goods = models.ManyToManyField("Goods", through="CartItem")
 
     def __str__(self):
         return f"Shopping Cart for {self.user.name}"
 
 
 class CartItem(models.Model):
-    shopping_cart = models.ForeignKey(
-        ShoppingCart, on_delete=models.CASCADE
-    )  # Посилання на кошик
-    goods = models.ForeignKey("Goods", on_delete=models.CASCADE)  # Посилання на товар
-    quantity = models.PositiveIntegerField(default=1)  # Кількість товару в кошику
+    shopping_cart = models.ForeignKey(ShoppingCart, on_delete=models.CASCADE)
+    goods = models.ForeignKey("Goods", on_delete=models.CASCADE)
+    quantity = models.PositiveIntegerField(default=1)
     discount_percentage = models.DecimalField(max_digits=5, decimal_places=2, default=0)
 
     def __str__(self):
@@ -83,13 +77,11 @@ class OrderItem(models.Model):
 
 
 class DiscountCoupon(models.Model):
-    code = models.CharField(max_length=50, unique=True)  # Унікальний код купону
-    shop = models.ForeignKey(Shop, on_delete=models.CASCADE)  # Посилання на магазин
-    user = models.ForeignKey(
-        Customer, on_delete=models.CASCADE
-    )  # Посилання на користувача
-    discount_percentage = models.PositiveIntegerField()  # Відсоток знижки
-    is_used = models.BooleanField(default=False)  # Позначка про використання купону
+    code = models.CharField(max_length=50, unique=True)
+    shop = models.ForeignKey(Shop, on_delete=models.CASCADE)
+    user = models.ForeignKey(Customer, on_delete=models.CASCADE)
+    discount_percentage = models.PositiveIntegerField()
+    is_used = models.BooleanField(default=False)
     expiration_datetime = models.DateTimeField(blank=True, null=True)
     created_at = models.DateTimeField(auto_now_add=True, blank=True, null=True)
 
@@ -102,7 +94,6 @@ class DiscountCoupon(models.Model):
         discount_percentage = random.randint(5, 20)
         code = "".join(random.choices("ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789", k=10))
 
-        # Перевірте кількість купонів, створених для користувача, за поточний день
         today = datetime.now()
         today_start = today.replace(hour=0, minute=0, second=0, microsecond=0)
         today_end = today.replace(hour=23, minute=59, second=59, microsecond=999999)
@@ -110,10 +101,8 @@ class DiscountCoupon(models.Model):
             user=user, created_at__range=(today_start, today_end)
         ).count()
 
-        # Встановіть обмеження на кількість створених купонів за день
         max_coupons_per_day = 3
 
-        # Встановіть час закінчення дії купона на 24 години після поточного часу
         expiration_datetime = timezone.now() + timezone.timedelta(hours=24)
 
         if coupon_count_today < max_coupons_per_day:
@@ -126,7 +115,7 @@ class DiscountCoupon(models.Model):
             )
             return coupon
         else:
-            return None  # Повернути None, якщо досягнуто обмеження кількості купонів
+            return None
 
     @classmethod
     def get_today_coupon_count(cls, user):
